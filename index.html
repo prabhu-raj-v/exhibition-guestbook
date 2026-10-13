@@ -3,530 +3,718 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Exhibition Digital Guestbook</title>
-  
+  <title>Exhibition Digital Guestbook - Photorealistic Sky Installation</title>
+
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Lucide Icons CDN -->
+  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Canvas Confetti CDN -->
+  <!-- Canvas Confetti -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
-  <!-- MQTT.js for Realtime Multi-Device WebSockets -->
+  <!-- MQTT.js for Real-Time Multi-Device Sync -->
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
-  <!-- jsPDF for Admin PDF Export -->
+  <!-- jsPDF for Official A4 PDF Guestbook Generation -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <!-- QRCode.js for Walk-Up Mobile Signing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&family=Caveat:wght@600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Caveat:wght@600;700&display=swap');
+
+    :root {
+      --sky-zenith: #1e40af;
+      --sky-mid1: #2563eb;
+      --sky-horizon: #38bdf8;
+      --sky-haze: #bae6fd;
+    }
 
     body {
       font-family: 'Plus Jakarta Sans', sans-serif;
       touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
     }
 
     .font-signature {
       font-family: 'Caveat', cursive;
     }
 
-    /* Ambient animated background for display */
-    .cosmic-bg {
-      background: radial-gradient(circle at 50% 20%, #1e1b4b 0%, #0f172a 45%, #020617 100%);
+    /* Multi-stop daytime open sky gradient */
+    .sky-viewport {
+      background: linear-gradient(180deg, var(--sky-zenith) 0%, var(--sky-mid1) 28%, var(--sky-horizon) 68%, var(--sky-haze) 100%);
     }
 
-    /* Floating Balloon styling with realistic volume */
-    .balloon-wrapper {
+    /* Sun flare & conic soft light rays */
+    .sun-flare {
+      position: absolute;
+      top: -120px;
+      right: -80px;
+      width: 540px;
+      height: 540px;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.95) 0%, rgba(254, 240, 138, 0.45) 30%, rgba(255, 255, 255, 0.1) 55%, transparent 75%);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .sun-rays {
+      position: absolute;
+      top: -200px;
+      right: -150px;
+      width: 800px;
+      height: 800px;
+      background: repeating-conic-gradient(from 120deg at 50% 50%, rgba(255, 255, 255, 0.12) 0deg 8deg, transparent 8deg 24deg);
+      mix-blend-mode: overlay;
+      opacity: 0.65;
+      pointer-events: none;
+      z-index: 2;
+      animation: rayPulse 16s ease-in-out infinite alternate;
+    }
+
+    @keyframes rayPulse {
+      0% { transform: scale(1) rotate(0deg); opacity: 0.55; }
+      100% { transform: scale(1.08) rotate(4deg); opacity: 0.75; }
+    }
+
+    /* 3D Pearlescent Latex Balloon Structure */
+    .balloon-unit {
       position: absolute;
       transform: translate(-50%, -50%);
       will-change: transform, left, top;
-      cursor: pointer;
-      user-select: none;
-      transition: filter 0.2s ease;
-    }
-    
-    .balloon-wrapper:hover {
-      filter: drop-shadow(0 0 25px rgba(255,255,255,0.45));
+      cursor: grab;
+      z-index: 10;
+      touch-action: none;
     }
 
-    .balloon-body {
+    .balloon-unit:active {
+      cursor: grabbing;
+    }
+
+    .balloon-hull {
       position: relative;
-      border-radius: 50% 50% 50% 50% / 45% 45% 55% 55%;
-      box-shadow: inset 10px 10px 25px rgba(255, 255, 255, 0.4),
-                  inset -12px -15px 35px rgba(0, 0, 0, 0.5),
-                  0 20px 40px rgba(0, 0, 0, 0.4);
+      width: 148px;
+      height: 182px;
+      border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+      transform-origin: center bottom;
+      transition: box-shadow 0.2s ease;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      overflow: hidden;
+      padding: 14px 10px 18px 10px;
     }
 
-    .balloon-knot {
-      width: 14px;
+    /* Pearlescent high-contrast spherical glints */
+    .balloon-hull::before {
+      content: '';
+      position: absolute;
+      top: 14px;
+      left: 20px;
+      width: 38px;
+      height: 24px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0) 75%);
+      transform: rotate(-32deg);
+      pointer-events: none;
+    }
+
+    .balloon-hull::after {
+      content: '';
+      position: absolute;
+      top: 36px;
+      left: 17px;
+      width: 12px;
       height: 10px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.7);
+      pointer-events: none;
+    }
+
+    /* Crimped tied knot */
+    .balloon-knot {
+      width: 13px;
+      height: 9px;
       margin: -2px auto 0 auto;
-      border-radius: 3px 3px 6px 6px;
-      box-shadow: inset 0 -2px 5px rgba(0,0,0,0.4);
+      border-radius: 2px 2px 5px 5px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.25);
     }
 
-    .balloon-string {
-      width: 2px;
-      height: 60px;
-      background: linear-gradient(to bottom, rgba(255,255,255,0.5), rgba(255,255,255,0.1));
-      margin: 0 auto;
-      transform-origin: top center;
-      animation: stringSway 3s ease-in-out infinite alternate;
+    /* Glassmorphism Surface for UI Kiosk and HUD */
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.86);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      box-shadow: 0 20px 45px -10px rgba(14, 116, 144, 0.22), 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
     }
 
-    @keyframes stringSway {
-      0% { transform: rotate(-5deg); }
-      100% { transform: rotate(5deg); }
+    .glass-input {
+      background: rgba(255, 255, 255, 0.75);
+      border: 1px solid rgba(203, 213, 225, 0.8);
+      color: #0f172a;
     }
 
-    .balloon-popping {
-      animation: balloonBurst 0.25s forwards cubic-bezier(0.1, 0.9, 0.2, 1);
-    }
-
-    @keyframes balloonBurst {
-      0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-      50% { transform: translate(-50%, -50%) scale(1.4); opacity: 0.8; }
-      100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+    .glass-input:focus {
+      background: rgba(255, 255, 255, 0.98);
+      border-color: #0284c7;
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.35);
     }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen overflow-x-hidden selection:bg-indigo-500 selection:text-white">
+<body class="bg-slate-900 text-slate-900 overflow-hidden w-screen h-screen">
 
-  <!-- ================= TOP GLOBAL NAVIGATION ================= -->
-  <header class="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-pink-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-          <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
-        </div>
-        <div>
-          <span class="font-bold text-lg tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">Exhibition Cloud Guestbook</span>
-          <span id="headerRoomLabel" class="ml-2 text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-indigo-400 border border-slate-700">Room: EXPO-2026</span>
-        </div>
+  <!-- ================= PROCEDURAL 60 FPS CLOUD CANVAS LAYER ================= -->
+  <canvas id="cloudCanvas" class="fixed inset-0 pointer-events-none z-[1] w-full h-full"></canvas>
+
+  <!-- Ambient Sky Glow & Light Rays -->
+  <div class="sun-flare"></div>
+  <div class="sun-rays"></div>
+
+  <!-- Global Navigation Bar -->
+  <header class="fixed top-0 inset-x-0 h-16 bg-white/70 backdrop-blur-xl border-b border-white/60 px-4 sm:px-8 flex items-center justify-between z-40">
+    <div class="flex items-center space-x-3">
+      <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-500 via-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/25">
+        <i data-lucide="cloud-sun" class="w-5 h-5 text-white"></i>
+      </div>
+      <div>
+        <h1 class="font-extrabold text-sm sm:text-base tracking-tight text-slate-900 flex items-center gap-2">
+          Exhibition Sky Guestbook
+          <span id="roomCodeBadge" class="hidden sm:inline-block text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 border border-sky-300/80">ROOM: EXPO-2026</span>
+        </h1>
+        <p class="text-[11px] text-slate-500 font-medium">Photorealistic Ambient Installation</p>
+      </div>
+    </div>
+
+    <div class="flex items-center space-x-2.5">
+      <!-- Live Sync Status -->
+      <div id="connPill" class="hidden sm:flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-700 text-xs font-semibold">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span id="connPillText">Real-Time Sync Active</span>
       </div>
 
-      <!-- Sync Status & View Switcher -->
-      <div class="flex items-center space-x-3">
-        <!-- Live Connection Indicator -->
-        <div id="connBadge" class="hidden sm:flex items-center space-x-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-medium">
-          <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
-          <span id="connStatusText">Connecting Cloud...</span>
-        </div>
-
-        <!-- Mode Buttons -->
-        <button id="btnSwitchLaptop" onclick="switchView('laptop')" class="px-3.5 py-1.5 rounded-lg text-sm font-semibold transition bg-indigo-600 text-white shadow-md shadow-indigo-600/30">
-          <i data-lucide="pen-tool" class="w-4 h-4 inline mr-1"></i> Kiosk Mode
-        </button>
-        <button id="btnSwitchDisplay" onclick="switchView('display')" class="px-3.5 py-1.5 rounded-lg text-sm font-semibold transition text-slate-300 hover:bg-slate-800">
-          <i data-lucide="projector" class="w-4 h-4 inline mr-1"></i> Big Display
-        </button>
-      </div>
+      <!-- View Switcher -->
+      <button id="btnSwitchKiosk" onclick="switchMode('kiosk')" class="px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-sky-600 text-white shadow-md shadow-sky-600/30 transition">
+        <i data-lucide="pen-tool" class="w-4 h-4 inline mr-1"></i> Screen A: Kiosk
+      </button>
+      <button id="btnSwitchWall" onclick="switchMode('wall')" class="px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold text-slate-700 hover:bg-slate-200/60 transition">
+        <i data-lucide="projector" class="w-4 h-4 inline mr-1"></i> Screen B: Big Display
+      </button>
     </div>
   </header>
 
-  <!-- ================= VIEW 1: LAPTOP KIOSK TERMINAL ================= -->
-  <main id="laptopView" class="max-w-3xl mx-auto px-4 py-8 sm:py-12">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden p-6 sm:p-8">
-      <div class="text-center max-w-lg mx-auto mb-6">
-        <h1 class="text-3xl font-extrabold text-white tracking-tight">Welcome to the Exhibition</h1>
-        <p class="text-slate-400 text-sm mt-1">Please enter your name & draw your signature to float your personal balloon on the big screen.</p>
+  <!-- ================= SCREEN A: LAPTOP / MOBILE KIOSK ================= -->
+  <main id="screenKiosk" class="relative z-30 w-full h-full pt-20 pb-6 px-4 flex items-center justify-center overflow-y-auto sky-viewport">
+    <div class="glass-panel w-full max-w-xl rounded-3xl p-6 sm:p-8 space-y-5 my-auto">
+      <div class="text-center space-y-1">
+        <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Leave Your Mark in the Sky</h2>
+        <p class="text-xs sm:text-sm text-slate-600 font-medium">Draw your autograph to launch an interactive 3D helium balloon on the big hall display.</p>
       </div>
 
-      <form id="guestForm" onsubmit="handleFormSubmit(event)" class="space-y-6">
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <form id="kioskForm" onsubmit="submitGuestbook(event)" class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <div>
-            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Your Full Name *</label>
-            <input type="text" id="guestName" required maxlength="36" placeholder="e.g. Elena Rostova" 
-              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1.5">Attendee Name *</label>
+            <input type="text" id="inputName" required maxlength="32" placeholder="e.g. Dr. Maya Lin"
+              class="w-full glass-input px-3.5 py-2.5 rounded-xl text-sm font-semibold outline-none transition">
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Organization / Title (Optional)</label>
-            <input type="text" id="guestOrg" maxlength="40" placeholder="e.g. Design Lead @ Studio" 
-              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1.5">Affiliation / Title</label>
+            <input type="text" id="inputOrg" maxlength="36" placeholder="e.g. Curator @ Met Museum"
+              class="w-full glass-input px-3.5 py-2.5 rounded-xl text-sm font-semibold outline-none transition">
           </div>
         </div>
 
-        <!-- Color Theme Selector -->
+        <!-- 7-Color Balloon Theme Selector -->
         <div>
-          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Choose Balloon Color</label>
-          <div class="flex flex-wrap gap-3" id="colorPickerGroup">
-            <!-- Populated via JS -->
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1.5">Balloon Theme</label>
+          <div class="grid grid-cols-7 gap-2" id="colorPickerContainer">
+            <!-- Rendered by JS -->
           </div>
         </div>
 
         <!-- Signature Pad -->
         <div>
-          <div class="flex items-center justify-between mb-2">
-            <label class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Your Digital Signature *</label>
-            <button type="button" onclick="clearSignaturePad()" class="text-xs text-rose-400 hover:text-rose-300 flex items-center space-x-1 py-0.5 px-2 rounded hover:bg-rose-950/30 transition">
-              <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
-              <span>Clear Pad</span>
-            </button>
+          <div class="flex items-center justify-between mb-1.5">
+            <div class="flex items-center space-x-2">
+              <label class="text-[11px] font-bold uppercase tracking-wider text-slate-700">Stylus / Finger Signature *</label>
+              <span id="sigValidBadge" class="hidden text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">Accepted</span>
+            </div>
+
+            <!-- Stroke Weight Selector & Clear Pad -->
+            <div class="flex items-center space-x-2">
+              <div class="flex items-center bg-slate-200/80 p-0.5 rounded-lg text-xs">
+                <button type="button" onclick="setStrokeWeight(2)" id="strokeBtn-2" class="px-2 py-0.5 rounded font-bold text-slate-600 hover:text-slate-900">Fine</button>
+                <button type="button" onclick="setStrokeWeight(3.5)" id="strokeBtn-3.5" class="px-2 py-0.5 rounded font-bold bg-white text-sky-700 shadow-sm">Med</button>
+                <button type="button" onclick="setStrokeWeight(6)" id="strokeBtn-6" class="px-2 py-0.5 rounded font-bold text-slate-600 hover:text-slate-900">Bold</button>
+              </div>
+              <button type="button" onclick="clearSignature()" class="text-xs text-rose-600 hover:text-rose-700 font-bold flex items-center gap-1 py-1 px-2 rounded-lg hover:bg-rose-50 transition">
+                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Clear
+              </button>
+            </div>
           </div>
-          <div class="relative bg-slate-950 border border-slate-700 rounded-xl overflow-hidden shadow-inner">
-            <canvas id="signatureCanvas" class="w-full h-44 cursor-crosshair block touch-none"></canvas>
-            <div id="sigPlaceholder" class="absolute inset-0 flex items-center justify-center pointer-events-none text-slate-600 font-signature text-2xl select-none">
-              Sign here with finger, mouse, or stylus
+
+          <div class="relative w-full h-40 rounded-2xl overflow-hidden border border-slate-300/80 bg-slate-900 shadow-inner">
+            <canvas id="padCanvas" class="w-full h-full block cursor-crosshair touch-none"></canvas>
+            <div id="padPlaceholder" class="absolute inset-0 flex items-center justify-center pointer-events-none text-slate-500 font-signature text-2xl select-none">
+              Sign smoothly with mouse, stylus, or touch
             </div>
           </div>
         </div>
 
-        <!-- Submit Button -->
-        <button type="submit" id="btnSubmit" class="w-full py-4 rounded-xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 text-white font-bold text-lg shadow-lg shadow-indigo-500/25 transition transform active:scale-[0.99] flex items-center justify-center space-x-2">
+        <!-- Launch Button -->
+        <button type="submit" id="btnSubmitForm" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-extrabold text-base tracking-wide shadow-xl shadow-sky-600/30 active:scale-[0.99] transition flex items-center justify-center space-x-2">
           <i data-lucide="send" class="w-5 h-5"></i>
-          <span>Send to Big Display Screen</span>
+          <span>Release Balloon to Sky Display</span>
         </button>
       </form>
-    </div>
 
-    <!-- Success Feedback Notification -->
-    <div id="successNotice" class="hidden fixed bottom-6 right-6 max-w-sm bg-emerald-950 border border-emerald-700 text-emerald-200 px-5 py-4 rounded-xl shadow-2xl z-50 flex items-center space-x-3 animate-bounce">
-      <i data-lucide="check-circle-2" class="w-6 h-6 text-emerald-400 flex-shrink-0"></i>
-      <div>
-        <p class="font-bold text-sm">Sent to Exhibition Wall!</p>
-        <p class="text-xs text-emerald-300">Your balloon is now drifting in real time.</p>
+      <!-- 3-Second Auto-Reset Modal Banner -->
+      <div id="kioskSuccessNotice" class="hidden rounded-2xl bg-emerald-600 text-white p-4 shadow-xl text-center space-y-1 animate-fade-in">
+        <p class="font-extrabold text-base flex items-center justify-center gap-1.5">
+          <i data-lucide="check-circle" class="w-5 h-5"></i> Balloon Airborne!
+        </p>
+        <p class="text-xs text-emerald-100 font-medium">Terminal resets in <span id="resetSeconds" class="font-bold underline">3</span>s for next attendee...</p>
       </div>
     </div>
   </main>
 
-  <!-- ================= VIEW 2: BIG DISPLAY WALL ================= -->
-  <section id="displayView" class="hidden relative w-full h-[calc(100vh-4rem)] cosmic-bg overflow-hidden select-none">
-    
-    <!-- Big Screen Header Info Overlay -->
-    <div class="absolute top-4 left-6 z-30 pointer-events-none flex items-center space-x-4">
-      <div class="bg-slate-900/60 backdrop-blur-md border border-slate-800 px-4 py-2 rounded-xl">
-        <h2 class="text-xs uppercase tracking-widest text-slate-400 font-bold">Active Visitors</h2>
-        <div class="flex items-center space-x-2 mt-0.5">
-          <span id="balloonCountDisplay" class="text-2xl font-black text-indigo-400">0</span>
-          <span class="text-xs text-slate-400">balloons floating</span>
+  <!-- ================= SCREEN B: BIG DISPLAY / PROJECTOR WALL ================= -->
+  <section id="screenWall" class="hidden relative w-full h-full sky-viewport overflow-hidden pt-16">
+    <!-- Overlay Physics String Canvas -->
+    <canvas id="stringCanvas" class="absolute inset-0 z-[9] pointer-events-none w-full h-full"></canvas>
+
+    <!-- Interactive Balloon DOM Layer -->
+    <div id="balloonStage" class="relative w-full h-full overflow-hidden z-10"></div>
+
+    <!-- HUD Overlay Top-Left: Live Stats & Clock -->
+    <div class="absolute top-20 left-6 z-30 pointer-events-none space-y-2">
+      <div class="glass-panel px-4 py-2.5 rounded-2xl flex items-center space-x-4">
+        <div>
+          <span class="block text-[10px] uppercase tracking-wider font-extrabold text-slate-500">In Atmosphere</span>
+          <span id="wallActiveCount" class="text-2xl font-black text-sky-700">0</span>
         </div>
-      </div>
-      <div class="bg-slate-900/60 backdrop-blur-md border border-slate-800 px-4 py-2 rounded-xl">
-        <h2 class="text-xs uppercase tracking-widest text-slate-400 font-bold">Total Recorded</h2>
-        <div class="flex items-center space-x-2 mt-0.5">
-          <span id="totalLedgerCountDisplay" class="text-2xl font-black text-pink-400">0</span>
-          <span class="text-xs text-slate-400">signed guests</span>
+        <div class="h-8 w-px bg-slate-300"></div>
+        <div>
+          <span class="block text-[10px] uppercase tracking-wider font-extrabold text-slate-500">Total Registry</span>
+          <span id="wallTotalCount" class="text-2xl font-black text-indigo-700">0</span>
+        </div>
+        <div class="h-8 w-px bg-slate-300"></div>
+        <div>
+          <span class="block text-[10px] uppercase tracking-wider font-extrabold text-slate-500">Local Hall Time</span>
+          <span id="wallLiveClock" class="text-sm font-bold text-slate-800">11:00 AM</span>
         </div>
       </div>
     </div>
 
-    <!-- Top Right: Admin & Controls -->
-    <div class="absolute top-4 right-6 z-30 flex items-center space-x-3">
-      <button onclick="toggleAudio()" id="btnMute" class="p-2.5 rounded-xl bg-slate-900/70 border border-slate-800 hover:bg-slate-800 text-slate-300 transition shadow">
-        <i data-lucide="volume-2" id="muteIcon" class="w-5 h-5"></i>
+    <!-- HUD Overlay Top-Right: Mobile Walk-Up QR & Admin -->
+    <div class="absolute top-20 right-6 z-30 flex items-center space-x-2.5">
+      <button onclick="toggleAudio()" id="btnAudioMute" class="p-3 rounded-2xl glass-panel hover:bg-white text-slate-700 transition shadow">
+        <i data-lucide="volume-2" id="iconAudio" class="w-5 h-5"></i>
       </button>
-      <button onclick="toggleFullscreen()" class="p-2.5 rounded-xl bg-slate-900/70 border border-slate-800 hover:bg-slate-800 text-slate-300 transition shadow">
+
+      <button onclick="toggleQRModal()" class="px-3.5 py-3 rounded-2xl glass-panel hover:bg-white text-slate-800 font-bold text-xs flex items-center space-x-1.5 shadow transition">
+        <i data-lucide="qr-code" class="w-4 h-4 text-sky-600"></i>
+        <span>Mobile Walk-Up</span>
+      </button>
+
+      <button onclick="openAdmin()" class="px-3.5 py-3 rounded-2xl bg-slate-900/90 hover:bg-slate-900 text-white font-bold text-xs flex items-center space-x-1.5 shadow-lg transition">
+        <i data-lucide="shield-check" class="w-4 h-4 text-sky-400"></i>
+        <span>Admin & PDF</span>
+      </button>
+
+      <button onclick="toggleFullScreen()" class="p-3 rounded-2xl glass-panel hover:bg-white text-slate-700 transition shadow">
         <i data-lucide="maximize" class="w-5 h-5"></i>
       </button>
-      <button onclick="openAdminModal()" class="px-3.5 py-2 rounded-xl bg-indigo-600/80 hover:bg-indigo-600 border border-indigo-500/50 text-white font-semibold text-xs tracking-wide flex items-center space-x-1.5 shadow-lg transition">
-        <i data-lucide="shield" class="w-4 h-4"></i>
-        <span>Admin & PDF Export</span>
-      </button>
-    </div>
-
-    <!-- Floating Canvas Container for Balloons -->
-    <div id="balloonStage" class="relative w-full h-full overflow-hidden">
-      <!-- Balloons spawn here -->
     </div>
   </section>
 
-  <!-- ================= ADMIN PIN & EXPORT MODAL ================= -->
-  <div id="adminModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-2xl shadow-2xl p-6 sm:p-8">
-      
-      <!-- Screen 1: PIN Authentication -->
-      <div id="adminPinScreen">
-        <div class="flex items-center space-x-3 mb-4">
-          <div class="p-3 bg-indigo-500/10 rounded-xl text-indigo-400 border border-indigo-500/20">
+  <!-- ================= QR CODE WALK-UP MODAL ================= -->
+  <div id="modalQR" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel w-full max-w-sm rounded-3xl p-6 text-center space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="font-black text-lg text-slate-900">Scan & Sign from Phone</h3>
+        <button onclick="toggleQRModal()" class="text-slate-400 hover:text-slate-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <p class="text-xs text-slate-600">Point your phone camera to open this kiosk and launch your balloon in real-time.</p>
+      <div class="bg-white p-4 rounded-2xl inline-block shadow-inner mx-auto">
+        <div id="qrcodeBox"></div>
+      </div>
+      <div class="text-[11px] font-bold text-sky-800 bg-sky-100/80 py-1.5 px-3 rounded-xl border border-sky-200" id="qrUrlLabel">
+        Direct Kiosk Link
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= PIN-PROTECTED ADMIN MODAL ================= -->
+  <div id="modalAdmin" class="hidden fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel w-full max-w-md rounded-3xl p-6 sm:p-8 space-y-5">
+
+      <!-- View 1: PIN Authentication -->
+      <div id="adminPinView" class="space-y-4">
+        <div class="flex items-center space-x-3">
+          <div class="w-12 h-12 rounded-2xl bg-indigo-100 border border-indigo-200 flex items-center justify-center text-indigo-700">
             <i data-lucide="lock" class="w-6 h-6"></i>
           </div>
           <div>
-            <h3 class="text-lg font-bold text-white">Admin Security Access</h3>
-            <p class="text-xs text-slate-400">Enter event admin PIN (Default: 1234)</p>
+            <h3 class="font-extrabold text-lg text-slate-900">Curator Admin Security</h3>
+            <p class="text-xs text-slate-500">PIN Required (Default PIN: 1234)</p>
           </div>
         </div>
-        <form onsubmit="verifyAdminPin(event)" class="space-y-4">
-          <input type="password" id="adminPinInput" maxlength="6" placeholder="Enter PIN" 
-            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-center text-2xl tracking-widest text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          <div id="pinError" class="hidden text-rose-400 text-xs font-semibold text-center">Incorrect PIN. Try again.</div>
-          <div class="flex space-x-3">
-            <button type="button" onclick="closeAdminModal()" class="w-1/2 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-sm">Cancel</button>
-            <button type="submit" class="w-1/2 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm">Unlock</button>
+
+        <form onsubmit="handleAdminLogin(event)" class="space-y-3">
+          <input type="password" id="inputAdminPin" maxlength="6" placeholder="• • • •"
+            class="w-full glass-input text-center text-3xl tracking-widest font-black py-3 rounded-2xl outline-none">
+          <div id="adminPinError" class="hidden text-xs font-bold text-rose-600 text-center">Incorrect PIN. Please re-enter.</div>
+          <div class="flex space-x-2">
+            <button type="button" onclick="closeAdmin()" class="w-1/2 py-2.5 rounded-xl font-bold text-xs text-slate-600 bg-slate-200/80 hover:bg-slate-300">Dismiss</button>
+            <button type="submit" class="w-1/2 py-2.5 rounded-xl font-bold text-xs text-white bg-sky-600 hover:bg-sky-500">Unlock Panel</button>
           </div>
         </form>
       </div>
 
-      <!-- Screen 2: Admin Dashboard & PDF Generator -->
-      <div id="adminDashboardScreen" class="hidden space-y-6">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+      <!-- View 2: Admin Dashboard & Official A4 PDF Export -->
+      <div id="adminPanelView" class="hidden space-y-5">
+        <div class="flex items-center justify-between border-b border-slate-200 pb-3">
           <div>
-            <h3 class="text-lg font-bold text-white">Event Administration</h3>
-            <p class="text-xs text-slate-400">Export guest records or manage the hall display</p>
+            <h3 class="font-extrabold text-lg text-slate-900">Exhibition Control</h3>
+            <p class="text-xs text-slate-500" id="adminInfoRoom">Room EXPO-2026</p>
           </div>
-          <button onclick="closeAdminModal()" class="text-slate-400 hover:text-white">
+          <button onclick="closeAdmin()" class="text-slate-400 hover:text-slate-700">
             <i data-lucide="x" class="w-5 h-5"></i>
           </button>
         </div>
 
-        <div class="bg-slate-950 rounded-xl border border-slate-800 p-4 space-y-2">
-          <div class="flex justify-between text-xs text-slate-400">
-            <span>Current Room Code:</span>
-            <span class="font-bold text-indigo-400" id="adminRoomCodeDisplay">EXPO-2026</span>
-          </div>
-          <div class="flex justify-between text-xs text-slate-400">
-            <span>Total Signatures In Ledger:</span>
-            <span class="font-bold text-pink-400" id="adminSignaturesCount">0</span>
-          </div>
+        <div class="p-3.5 bg-sky-50 rounded-2xl border border-sky-100 flex justify-between items-center text-xs">
+          <span class="text-slate-600 font-medium">Ledger Signatures Stored:</span>
+          <span id="adminTotalBadge" class="font-black text-sky-800 text-base">0</span>
         </div>
 
-        <!-- Primary Action: Generate PDF -->
-        <div>
-          <button onclick="generateGuestbookPDF()" id="btnExportPDF" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm shadow-lg shadow-emerald-600/30 flex items-center justify-center space-x-2 transition">
-            <i data-lucide="file-down" class="w-5 h-5"></i>
-            <span>Export Official Guestbook (PDF)</span>
-          </button>
-          <p class="text-[11px] text-slate-400 text-center mt-1.5">Compiles all visitor names, dates, times, and signatures into a formal document.</p>
-        </div>
+        <button onclick="exportGuestbookPDF()" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-sm shadow-lg shadow-emerald-600/25 flex items-center justify-center space-x-2 transition">
+          <i data-lucide="file-text" class="w-5 h-5"></i>
+          <span>Export Official PDF Guestbook</span>
+        </button>
 
-        <!-- Secondary Admin Actions -->
-        <div class="grid grid-cols-2 gap-3 pt-2">
-          <button onclick="popAllBalloons()" class="py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-semibold text-xs border border-amber-500/20 flex items-center justify-center space-x-1.5">
+        <div class="grid grid-cols-2 gap-2.5 pt-2">
+          <button onclick="popAllBalloons()" class="py-2.5 rounded-xl font-bold text-xs bg-amber-100 text-amber-900 hover:bg-amber-200 transition flex items-center justify-center space-x-1">
             <i data-lucide="sparkles" class="w-4 h-4"></i>
-            <span>Pop All On Screen</span>
+            <span>Pop All Floating</span>
           </button>
-          <button onclick="clearLedgerConfirm()" class="py-2.5 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 font-semibold text-xs border border-rose-800/40 flex items-center justify-center space-x-1.5">
+          <button onclick="clearLedgerRecords()" class="py-2.5 rounded-xl font-bold text-xs bg-rose-100 text-rose-900 hover:bg-rose-200 transition flex items-center justify-center space-x-1">
             <i data-lucide="trash-2" class="w-4 h-4"></i>
-            <span>Clear Stored Records</span>
+            <span>Clear Storage</span>
           </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ================= APPLICATION LOGIC ================= -->
+  <!-- ================= CORE APPLICATION LOGIC ================= -->
   <script>
-    // --- Configuration & Constants ---
-    const APP_CONFIG = {
-      defaultRoom: 'EXPO-2026',
-      adminPin: '1234',
-      balloonColors: [
-        { name: 'Indigo Dream', bg: 'linear-gradient(135deg, #6366f1 0%, #4338ca 100%)', knot: '#3730a3', stroke: '#c7d2fe' },
-        { name: 'Sunset Pink', bg: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)', knot: '#9d174d', stroke: '#fbcfe8' },
-        { name: 'Emerald Glow', bg: 'linear-gradient(135deg, #10b981 0%, #047857 100%)', knot: '#065f46', stroke: '#a7f3d0' },
-        { name: 'Solar Amber', bg: 'linear-gradient(135deg, #f59e0b 0%, #b45309 100%)', knot: '#92400e', stroke: '#fde68a' },
-        { name: 'Cyan Sky', bg: 'linear-gradient(135deg, #06b6d4 0%, #0e7490 100%)', knot: '#155e75', stroke: '#a5f3fc' },
-        { name: 'Violet Neon', bg: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)', knot: '#5b21b6', stroke: '#ddd6fe' }
-      ]
-    };
+    /* ----------------------------------------------------
+       1. COLOR SCHEMES (7 Pearlescent Schemes)
+       ---------------------------------------------------- */
+    const BALLOON_THEMES = [
+      { id: 'azure', name: 'Azure Pearl', grad: 'radial-gradient(circle at 35% 25%, #60a5fa 0%, #2563eb 55%, #1d4ed8 100%)', knot: '#1e40af', rim: 'rgba(147, 197, 253, 0.7)' },
+      { id: 'ruby', name: 'Ruby Rose', grad: 'radial-gradient(circle at 35% 25%, #fb7185 0%, #e11d48 55%, #9f1239 100%)', knot: '#881337', rim: 'rgba(254, 205, 211, 0.7)' },
+      { id: 'emerald', name: 'Emerald Jade', grad: 'radial-gradient(circle at 35% 25%, #34d399 0%, #059669 55%, #064e3b 100%)', knot: '#064e3b', rim: 'rgba(167, 243, 208, 0.7)' },
+      { id: 'amber', name: 'Solar Amber', grad: 'radial-gradient(circle at 35% 25%, #fbbf24 0%, #d97706 55%, #92400e 100%)', knot: '#78350f', rim: 'rgba(253, 230, 138, 0.7)' },
+      { id: 'violet', name: 'Amethyst Violet', grad: 'radial-gradient(circle at 35% 25%, #c084fc 0%, #9333ea 55%, #581c87 100%)', knot: '#3b0764', rim: 'rgba(233, 213, 255, 0.7)' },
+      { id: 'coral', name: 'Coral Sunset', grad: 'radial-gradient(circle at 35% 25%, #fb923c 0%, #ea580c 55%, #9a3412 100%)', knot: '#7c2d12', rim: 'rgba(254, 215, 170, 0.7)' },
+      { id: 'indigo', name: 'Cosmic Indigo', grad: 'radial-gradient(circle at 35% 25%, #818cf8 0%, #4f46e5 55%, #312e81 100%)', knot: '#1e1b4b', rim: 'rgba(199, 210, 254, 0.7)' }
+    ];
 
-    // --- State Variables ---
-    let currentRoom = APP_CONFIG.defaultRoom;
-    let selectedColorIndex = 0;
-    let mqttClient = null;
-    let activeBalloons = []; // On-screen objects
+    let selectedThemeIndex = 0;
+    let roomCode = 'EXPO-2026';
+    let currentMode = 'kiosk';
     let soundEnabled = true;
-    let audioCtx = null;
+    let audioContext = null;
+    let mqttClient = null;
+    let broadcastChannel = null;
 
-    // --- Setup URL Room parameters ---
+    // Check query params for Room
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('room')) {
-      currentRoom = urlParams.get('room').toUpperCase().trim();
+      roomCode = urlParams.get('room').toUpperCase().trim();
     }
-    document.getElementById('headerRoomLabel').innerText = `Room: ${currentRoom}`;
+    document.getElementById('roomCodeBadge').innerText = `ROOM: ${roomCode}`;
+    document.getElementById('adminInfoRoom').innerText = `Exhibition Room: ${roomCode}`;
 
-    // --- Storage Keys for Permanent Ledger ---
-    const STORAGE_LEDGER_KEY = `guestbook_ledger_${currentRoom}`;
+    const STORAGE_KEY = `guestbook_vault_${roomCode}`;
 
-    function getStoredLedger() {
+    function getLedger() {
       try {
-        return JSON.parse(localStorage.getItem(STORAGE_LEDGER_KEY) || '[]');
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
       } catch (e) {
         return [];
       }
     }
 
-    function saveToLedger(entry) {
-      const list = getStoredLedger();
-      // Avoid duplicate entries
-      if (!list.some(item => item.id === entry.id)) {
-        list.push(entry);
-        localStorage.setItem(STORAGE_LEDGER_KEY, JSON.stringify(list));
+    function recordInLedger(entry) {
+      const records = getLedger();
+      if (!records.some(r => r.id === entry.id)) {
+        records.push(entry);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
       }
-      updateLedgerCounters();
+      refreshStatsCounters();
     }
 
-    function updateLedgerCounters() {
-      const list = getStoredLedger();
-      const count = list.length;
-      document.getElementById('totalLedgerCountDisplay').innerText = count;
-      document.getElementById('adminSignaturesCount').innerText = count;
+    function refreshStatsCounters() {
+      const ledger = getLedger();
+      const count = ledger.length;
+      document.getElementById('wallTotalCount').innerText = count;
+      document.getElementById('adminTotalBadge').innerText = count;
     }
 
-    // --- View Switching ---
-    function switchView(view) {
-      const laptopView = document.getElementById('laptopView');
-      const displayView = document.getElementById('displayView');
-      const btnLaptop = document.getElementById('btnSwitchLaptop');
-      const btnDisplay = document.getElementById('btnSwitchDisplay');
+    /* ----------------------------------------------------
+       2. PROCEDURAL 60 FPS OPEN SKY CLOUD CANVAS
+       ---------------------------------------------------- */
+    const cloudCanvas = document.getElementById('cloudCanvas');
+    const cloudCtx = cloudCanvas.getContext('2d');
+    let clouds = [];
 
-      if (view === 'laptop') {
-        laptopView.classList.remove('hidden');
-        displayView.classList.add('hidden');
-        btnLaptop.className = 'px-3.5 py-1.5 rounded-lg text-sm font-semibold transition bg-indigo-600 text-white shadow-md shadow-indigo-600/30';
-        btnDisplay.className = 'px-3.5 py-1.5 rounded-lg text-sm font-semibold transition text-slate-300 hover:bg-slate-800';
-        resizeCanvas();
-      } else {
-        laptopView.classList.add('hidden');
-        displayView.classList.remove('hidden');
-        btnDisplay.className = 'px-3.5 py-1.5 rounded-lg text-sm font-semibold transition bg-indigo-600 text-white shadow-md shadow-indigo-600/30';
-        btnLaptop.className = 'px-3.5 py-1.5 rounded-lg text-sm font-semibold transition text-slate-300 hover:bg-slate-800';
+    function resizeCloudCanvas() {
+      cloudCanvas.width = window.innerWidth;
+      cloudCanvas.height = window.innerHeight;
+      initClouds();
+    }
+
+    function initClouds() {
+      clouds = [];
+      const cloudCount = Math.max(5, Math.floor(window.innerWidth / 280));
+      for (let i = 0; i < cloudCount; i++) {
+        clouds.push({
+          x: Math.random() * window.innerWidth,
+          y: Math.random() * (window.innerHeight * 0.55),
+          baseRadius: 35 + Math.random() * 45,
+          speed: 0.12 + Math.random() * 0.22,
+          puffs: [
+            { ox: -30, oy: 10, r: 0.7 },
+            { ox: 0, oy: -15, r: 1.1 },
+            { ox: 35, oy: 5, r: 0.8 },
+            { ox: -15, oy: -8, r: 0.9 },
+            { ox: 20, oy: -10, r: 0.95 }
+          ]
+        });
       }
     }
 
-    // --- Color Picker Population ---
-    const colorGroup = document.getElementById('colorPickerGroup');
-    APP_CONFIG.balloonColors.forEach((color, idx) => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = `w-9 h-9 rounded-full transition-transform border-2 ${idx === 0 ? 'border-white scale-110 shadow-lg' : 'border-transparent hover:scale-105'}`;
-      btn.style.background = color.bg;
-      btn.onclick = () => {
-        selectedColorIndex = idx;
-        document.querySelectorAll('#colorPickerGroup button').forEach((b, i) => {
-          b.className = `w-9 h-9 rounded-full transition-transform border-2 ${i === idx ? 'border-white scale-110 shadow-lg' : 'border-transparent hover:scale-105'}`;
+    function renderClouds() {
+      cloudCtx.clearRect(0, 0, cloudCanvas.width, cloudCanvas.height);
+
+      clouds.forEach(c => {
+        c.x += c.speed;
+        if (c.x - 180 > cloudCanvas.width) {
+          c.x = -180;
+          c.y = Math.random() * (cloudCanvas.height * 0.55);
+        }
+
+        // Draw soft alpha cumulus puffs
+        c.puffs.forEach(p => {
+          const px = c.x + p.ox;
+          const py = c.y + p.oy;
+          const pr = c.baseRadius * p.r;
+
+          const radGrad = cloudCtx.createRadialGradient(px, py - pr * 0.3, pr * 0.1, px, py, pr);
+          radGrad.addColorStop(0, 'rgba(255, 255, 255, 0.42)');
+          radGrad.addColorStop(0.7, 'rgba(255, 255, 255, 0.25)');
+          radGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+          cloudCtx.fillStyle = radGrad;
+          cloudCtx.beginPath();
+          cloudCtx.arc(px, py, pr, 0, Math.PI * 2);
+          cloudCtx.fill();
+        });
+      });
+
+      requestAnimationFrame(renderClouds);
+    }
+
+    /* ----------------------------------------------------
+       3. SIGNATURE PAD CANVAS ENGINE
+       ---------------------------------------------------- */
+    const pad = document.getElementById('padCanvas');
+    const padCtx = pad.getContext('2d');
+    let padStrokeWeight = 3.5;
+    let padDrawing = false;
+    let strokes = []; // Array of { points: [{x, y}] }
+    let activeStroke = null;
+
+    function resizePad() {
+      const rect = pad.getBoundingClientRect();
+      if (rect.width === 0) return;
+      pad.width = rect.width * window.devicePixelRatio;
+      pad.height = rect.height * window.devicePixelRatio;
+      padCtx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      redrawPad();
+    }
+
+    function redrawPad() {
+      const rect = pad.getBoundingClientRect();
+      padCtx.clearRect(0, 0, rect.width, rect.height);
+      padCtx.strokeStyle = '#ffffff';
+      padCtx.lineCap = 'round';
+      padCtx.lineJoin = 'round';
+
+      strokes.forEach(stk => {
+        if (stk.points.length < 2) return;
+        padCtx.lineWidth = stk.weight;
+        padCtx.beginPath();
+        padCtx.moveTo(stk.points[0].x, stk.points[0].y);
+        for (let i = 1; i < stk.points.length; i++) {
+          padCtx.lineTo(stk.points[i].x, stk.points[i].y);
+        }
+        padCtx.stroke();
+      });
+    }
+
+    function getPadPos(e) {
+      const r = pad.getBoundingClientRect();
+      const cx = e.touches ? e.touches[0].clientX : e.clientX;
+      const cy = e.touches ? e.touches[0].clientY : e.clientY;
+      return { x: cx - r.left, y: cy - r.top };
+    }
+
+    function onPadStart(e) {
+      padDrawing = true;
+      document.getElementById('padPlaceholder').classList.add('hidden');
+      document.getElementById('sigValidBadge').classList.remove('hidden');
+      const pos = getPadPos(e);
+      activeStroke = { weight: padStrokeWeight, points: [pos] };
+      strokes.push(activeStroke);
+      e.preventDefault();
+    }
+
+    function onPadMove(e) {
+      if (!padDrawing || !activeStroke) return;
+      const pos = getPadPos(e);
+      activeStroke.points.push(pos);
+      redrawPad();
+      e.preventDefault();
+    }
+
+    function onPadEnd() {
+      padDrawing = false;
+      activeStroke = null;
+    }
+
+    pad.addEventListener('pointerdown', onPadStart);
+    pad.addEventListener('pointermove', onPadMove);
+    window.addEventListener('pointerup', onPadEnd);
+
+    function clearSignature() {
+      strokes = [];
+      redrawPad();
+      document.getElementById('padPlaceholder').classList.remove('hidden');
+      document.getElementById('sigValidBadge').classList.add('hidden');
+    }
+
+    function setStrokeWeight(w) {
+      padStrokeWeight = w;
+      [2, 3.5, 6].forEach(val => {
+        const btn = document.getElementById(`strokeBtn-${val}`);
+        if (val === w) {
+          btn.className = 'px-2 py-0.5 rounded font-bold bg-white text-sky-700 shadow-sm';
+        } else {
+          btn.className = 'px-2 py-0.5 rounded font-bold text-slate-600 hover:text-slate-900';
+        }
+      });
+    }
+
+    // Export signature as dual-stream: transparent PNG & dark-on-white PNG
+    function generateSignatureStreams() {
+      if (strokes.length === 0) return null;
+      const rect = pad.getBoundingClientRect();
+      const w = Math.max(rect.width, 240);
+      const h = Math.max(rect.height, 120);
+
+      // Stream 1: Balloon White Transparent Ink
+      const s1 = document.createElement('canvas');
+      s1.width = w * 2;
+      s1.height = h * 2;
+      const c1 = s1.getContext('2d');
+      c1.scale(2, 2);
+      c1.strokeStyle = '#ffffff';
+      c1.lineCap = 'round';
+      c1.lineJoin = 'round';
+      strokes.forEach(stk => {
+        if (stk.points.length < 2) return;
+        c1.lineWidth = stk.weight;
+        c1.beginPath();
+        c1.moveTo(stk.points[0].x, stk.points[0].y);
+        for (let i = 1; i < stk.points.length; i++) c1.lineTo(stk.points[i].x, stk.points[i].y);
+        c1.stroke();
+      });
+
+      // Stream 2: PDF Export Deep Dark Ink (#0f172a) on Pure White
+      const s2 = document.createElement('canvas');
+      s2.width = w * 2;
+      s2.height = h * 2;
+      const c2 = s2.getContext('2d');
+      c2.fillStyle = '#ffffff';
+      c2.fillRect(0, 0, s2.width, s2.height);
+      c2.scale(2, 2);
+      c2.strokeStyle = '#0f172a';
+      c2.lineCap = 'round';
+      c2.lineJoin = 'round';
+      strokes.forEach(stk => {
+        if (stk.points.length < 2) return;
+        c2.lineWidth = stk.weight * 1.2;
+        c2.beginPath();
+        c2.moveTo(stk.points[0].x, stk.points[0].y);
+        for (let i = 1; i < stk.points.length; i++) c2.lineTo(stk.points[i].x, stk.points[i].y);
+        c2.stroke();
+      });
+
+      return {
+        displayWhitePNG: s1.toDataURL('image/png'),
+        pdfDarkPNG: s2.toDataURL('image/png')
+      };
+    }
+
+    /* ----------------------------------------------------
+       4. THEME SELECTOR BUTTONS
+       ---------------------------------------------------- */
+    const colorBox = document.getElementById('colorPickerContainer');
+    BALLOON_THEMES.forEach((thm, idx) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = `w-full h-8 rounded-xl transition-transform border-2 ${idx === 0 ? 'border-white scale-110 shadow-md ring-2 ring-sky-500' : 'border-transparent hover:scale-105'}`;
+      b.style.background = thm.grad;
+      b.title = thm.name;
+      b.onclick = () => {
+        selectedThemeIndex = idx;
+        document.querySelectorAll('#colorPickerContainer button').forEach((btn, i) => {
+          btn.className = `w-full h-8 rounded-xl transition-transform border-2 ${i === idx ? 'border-white scale-110 shadow-md ring-2 ring-sky-500' : 'border-transparent hover:scale-105'}`;
         });
       };
-      colorGroup.appendChild(btn);
+      colorBox.appendChild(b);
     });
 
-    // --- Signature Pad Canvas (SVG Vector Capture) ---
-    const canvas = document.getElementById('signatureCanvas');
-    const ctx = canvas.getContext('2d');
-    let isDrawing = false;
-    let paths = []; // array of { points: [{x, y}] }
-    let currentPath = [];
-
-    function resizeCanvas() {
-      const rect = canvas.getBoundingClientRect();
-      if (rect.width === 0) return;
-      canvas.width = rect.width * window.devicePixelRatio;
-      canvas.height = rect.height * window.devicePixelRatio;
-      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-      redrawCanvas();
-    }
-
-    function redrawCanvas() {
-      const rect = canvas.getBoundingClientRect();
-      ctx.clearRect(0, 0, rect.width, rect.height);
-      ctx.strokeStyle = '#f8fafc';
-      ctx.lineWidth = 2.5;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-
-      paths.forEach(p => {
-        if (p.points.length < 2) return;
-        ctx.beginPath();
-        ctx.moveTo(p.points[0].x, p.points[0].y);
-        for (let i = 1; i < p.points.length; i++) {
-          ctx.lineTo(p.points[i].x, p.points[i].y);
-        }
-        ctx.stroke();
-      });
-    }
-
-    function getCanvasCoordinates(e) {
-      const rect = canvas.getBoundingClientRect();
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      return {
-        x: clientX - rect.left,
-        y: clientY - rect.top
-      };
-    }
-
-    function startDrawing(e) {
-      isDrawing = true;
-      document.getElementById('sigPlaceholder').classList.add('hidden');
-      const coords = getCanvasCoordinates(e);
-      currentPath = { points: [coords] };
-      paths.push(currentPath);
-      e.preventDefault();
-    }
-
-    function draw(e) {
-      if (!isDrawing) return;
-      const coords = getCanvasCoordinates(e);
-      currentPath.points.push(coords);
-      redrawCanvas();
-      e.preventDefault();
-    }
-
-    function stopDrawing() {
-      isDrawing = false;
-    }
-
-    canvas.addEventListener('mousedown', startDrawing);
-    canvas.addEventListener('mousemove', draw);
-    window.addEventListener('mouseup', stopDrawing);
-
-    canvas.addEventListener('touchstart', startDrawing, { passive: false });
-    canvas.addEventListener('touchmove', draw, { passive: false });
-    window.addEventListener('touchend', stopDrawing);
-
-    function clearSignaturePad() {
-      paths = [];
-      redrawCanvas();
-      document.getElementById('sigPlaceholder').classList.remove('hidden');
-    }
-
-    // Converts drawing to normalized SVG Path string for low-bandwidth transport
-    function exportSignatureToSVGPath() {
-      if (paths.length === 0) return '';
-      const rect = canvas.getBoundingClientRect();
-      const w = rect.width || 1;
-      const h = rect.height || 1;
-
-      let d = '';
-      paths.forEach(p => {
-        if (p.points.length === 0) return;
-        // Normalize coordinates to 0..200 viewBox for crisp scaling
-        const nx0 = ((p.points[0].x / w) * 200).toFixed(1);
-        const ny0 = ((p.points[0].y / h) * 100).toFixed(1);
-        d += `M${nx0},${ny0}`;
-        for (let i = 1; i < p.points.length; i++) {
-          const nx = ((p.points[i].x / w) * 200).toFixed(1);
-          const ny = ((p.points[i].y / h) * 100).toFixed(1);
-          d += `L${nx},${ny}`;
-        }
-      });
-      return d;
-    }
-
-    // --- Web Audio Pop Synthesizer ---
-    function playPopSound() {
+    /* ----------------------------------------------------
+       5. SYNTHESIZED WEB AUDIO POP (480Hz -> 70Hz)
+       ---------------------------------------------------- */
+    function playLatexPop() {
       if (!soundEnabled) return;
       try {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
+        if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioContext.state === 'suspended') audioContext.resume();
 
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
 
         osc.type = 'triangle';
-        osc.frequency.setValueAtTime(450, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.12);
+        osc.frequency.setValueAtTime(480, audioContext.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(70, audioContext.currentTime + 0.14);
 
-        gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
-        gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+        gain.gain.setValueAtTime(0.65, audioContext.currentTime);
+        gain.gain.linearRampToValueAtTime(0.01, audioContext.currentTime + 0.14);
 
         osc.connect(gain);
-        gain.connect(audioCtx.destination);
+        gain.connect(audioContext.destination);
 
         osc.start();
-        osc.stop(audioCtx.currentTime + 0.13);
+        osc.stop(audioContext.currentTime + 0.15);
       } catch (e) {
         // Audio policy ignore
       }
@@ -534,7 +722,7 @@
 
     function toggleAudio() {
       soundEnabled = !soundEnabled;
-      const icon = document.getElementById('muteIcon');
+      const icon = document.getElementById('iconAudio');
       if (soundEnabled) {
         icon.setAttribute('data-lucide', 'volume-2');
       } else {
@@ -543,7 +731,7 @@
       lucide.createIcons();
     }
 
-    function toggleFullscreen() {
+    function toggleFullScreen() {
       if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch(() => {});
       } else {
@@ -551,266 +739,401 @@
       }
     }
 
-    // --- Universal Cloud Sync Engine (MQTT over WebSockets) ---
-    function initCloudSync() {
-      const clientId = 'guestbook_' + Math.random().toString(16).substring(2, 10);
-      const topic = `exhibition/guestbook/${currentRoom}/balloons`;
-
-      // Free reliable public broker over HTTPS WebSockets
-      mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
-        clientId: clientId,
-        clean: true,
-        reconnectPeriod: 2500
-      });
-
-      const badge = document.getElementById('connBadge');
-      const badgeText = document.getElementById('connStatusText');
-
-      mqttClient.on('connect', () => {
-        badge.classList.remove('hidden');
-        badge.className = 'hidden sm:flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-medium';
-        badgeText.innerText = 'Cloud Connected';
-        mqttClient.subscribe(topic);
-      });
-
-      mqttClient.on('reconnect', () => {
-        badgeText.innerText = 'Reconnecting...';
-      });
-
-      mqttClient.on('message', (t, message) => {
-        try {
-          const payload = JSON.parse(message.toString());
-          if (payload.action === 'NEW_BALLOON') {
-            spawnBalloonOnWall(payload.data);
-            saveToLedger(payload.data);
-          } else if (payload.action === 'POP_BALLOON') {
-            removeBalloonById(payload.id);
-          } else if (payload.action === 'POP_ALL') {
-            activeBalloons.forEach(b => triggerPopAnimation(b));
-          }
-        } catch (e) {
-          console.error('Payload parse err:', e);
-        }
-      });
-    }
-
-    // --- Form Submission Handling ---
-    function handleFormSubmit(e) {
-      e.preventDefault();
-      const name = document.getElementById('guestName').value.trim();
-      const org = document.getElementById('guestOrg').value.trim();
-      const svgPath = exportSignatureToSVGPath();
-
-      if (!svgPath) {
-        alert('Please draw your signature before submitting!');
-        return;
-      }
-
-      const balloonData = {
-        id: 'balloon_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
-        name: name,
-        org: org,
-        svgPath: svgPath,
-        colorIndex: selectedColorIndex,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        date: new Date().toLocaleDateString()
-      };
-
-      // 1. Broadcast to cloud
-      if (mqttClient && mqttClient.connected) {
-        const topic = `exhibition/guestbook/${currentRoom}/balloons`;
-        mqttClient.publish(topic, JSON.stringify({ action: 'NEW_BALLOON', data: balloonData }));
-      } else {
-        // Local fallback
-        spawnBalloonOnWall(balloonData);
-      }
-
-      // 2. Save locally into guestbook registry
-      saveToLedger(balloonData);
-
-      // 3. User feedback
-      showSuccessNotice();
-      
-      // 4. Reset form for next guest
-      document.getElementById('guestName').value = '';
-      document.getElementById('guestOrg').value = '';
-      clearSignaturePad();
-    }
-
-    function showSuccessNotice() {
-      const notice = document.getElementById('successNotice');
-      notice.classList.remove('hidden');
-      setTimeout(() => notice.classList.add('hidden'), 3500);
-    }
-
-    // --- Balloon Floating & Animation Engine ---
+    /* ----------------------------------------------------
+       6. HELIUM BALLOON & 7-NODE VERLET ROPE PHYSICS
+       ---------------------------------------------------- */
     const stage = document.getElementById('balloonStage');
+    const stringCanvas = document.getElementById('stringCanvas');
+    const stringCtx = stringCanvas.getContext('2d');
+    let balloons = [];
 
-    function spawnBalloonOnWall(data) {
-      // Check if already on stage
-      if (activeBalloons.some(b => b.id === data.id)) return;
+    function resizeStringCanvas() {
+      stringCanvas.width = window.innerWidth;
+      stringCanvas.height = window.innerHeight;
+    }
 
-      const color = APP_CONFIG.balloonColors[data.colorIndex] || APP_CONFIG.balloonColors[0];
-      const wrapper = document.createElement('div');
-      wrapper.className = 'balloon-wrapper';
-      wrapper.id = data.id;
+    class BalloonInstance {
+      constructor(data) {
+        this.data = data;
+        this.id = data.id;
+        const theme = BALLOON_THEMES[data.themeIndex] || BALLOON_THEMES[0];
+        this.theme = theme;
 
-      // Realistic balloon HTML structure
-      wrapper.innerHTML = `
-        <div class="balloon-body w-48 h-56 p-4 text-center" style="background: ${color.bg};">
-          <p class="font-extrabold text-white text-base tracking-tight truncate drop-shadow">${data.name}</p>
-          ${data.org ? `<p class="text-[11px] text-white/80 font-medium truncate drop-shadow-sm mb-1">${data.org}</p>` : ''}
-          <div class="w-full h-16 flex items-center justify-center my-1 bg-white/10 rounded-lg backdrop-blur-sm px-2">
-            <svg viewBox="0 0 200 100" class="w-full h-full stroke-current" style="color: ${color.stroke}; fill: none; stroke-width: 4px; stroke-linecap: round; stroke-linejoin: round;">
-              <path d="${data.svgPath}" />
-            </svg>
+        const stageW = window.innerWidth;
+        const stageH = window.innerHeight;
+
+        this.x = Math.random() * (stageW - 300) + 150;
+        this.y = stageH + 200; // Launch from bottom
+        this.vx = (Math.random() - 0.5) * 1.5;
+        this.vy = -3.2 - Math.random() * 1.2;
+
+        this.squashX = 1.0;
+        this.squashY = 1.0;
+        this.tilt = 0;
+        this.isDragging = false;
+        this.dragStartX = 0;
+        this.dragStartY = 0;
+        this.pointerDownPos = { x: 0, y: 0 };
+
+        // 7-Node Verlet Integration String (6 segments, 12px each)
+        this.segmentLength = 12;
+        this.nodes = [];
+        for (let i = 0; i < 7; i++) {
+          this.nodes.push({
+            x: this.x,
+            y: this.y + 90 + i * this.segmentLength,
+            oldX: this.x,
+            oldY: this.y + 90 + i * this.segmentLength
+          });
+        }
+
+        // Create DOM element
+        this.el = document.createElement('div');
+        this.el.className = 'balloon-unit';
+        this.el.id = this.id;
+
+        this.el.innerHTML = `
+          <div class="balloon-hull" style="background: ${theme.grad}; box-shadow: 0 24px 45px -10px rgba(0,0,0,0.35), 0 0 16px ${theme.rim} inset;">
+            <p class="font-extrabold text-white text-sm tracking-tight text-center truncate w-full drop-shadow">${data.name}</p>
+            ${data.org ? `<p class="text-[10px] text-white/85 font-medium truncate w-full text-center drop-shadow-sm mb-0.5">${data.org}</p>` : ''}
+            <div class="w-full h-14 flex items-center justify-center my-0.5 bg-white/10 rounded-xl backdrop-blur-sm px-1.5 shadow-inner">
+              <img src="${data.displayWhitePNG}" class="max-h-full max-w-full object-contain filter drop-shadow">
+            </div>
+            <span class="text-[9px] text-white/80 font-bold tracking-wider">${data.timestamp}</span>
           </div>
-          <span class="text-[10px] text-white/70 font-semibold mt-1">${data.timestamp}</span>
-        </div>
-        <div class="balloon-knot" style="background: ${color.knot};"></div>
-        <div class="balloon-string"></div>
-      `;
+          <div class="balloon-knot" style="background: ${theme.knot};"></div>
+        `;
 
-      // Physics tracking object
-      const stageRect = stage.getBoundingClientRect();
-      const balloonObj = {
-        id: data.id,
-        el: wrapper,
-        x: Math.random() * (stageRect.width - 240) + 120,
-        y: stageRect.height + 150, // Starts off bottom
-        vx: (Math.random() - 0.5) * 0.8,
-        vy: -(0.7 + Math.random() * 0.6),
-        wobble: Math.random() * Math.PI * 2,
-        wobbleSpeed: 0.02 + Math.random() * 0.02,
-        data: data
-      };
+        this.bindEvents();
+        stage.appendChild(this.el);
+      }
 
-      // Tap or Click to Pop Balloon
-      wrapper.onclick = () => {
-        triggerPopAnimation(balloonObj);
-        // Inform other screens to pop
-        if (mqttClient && mqttClient.connected) {
-          const topic = `exhibition/guestbook/${currentRoom}/balloons`;
-          mqttClient.publish(topic, JSON.stringify({ action: 'POP_BALLOON', id: balloonObj.id }));
+      bindEvents() {
+        const onDown = (e) => {
+          this.isDragging = true;
+          const cx = e.clientX || (e.touches && e.touches[0].clientX);
+          const cy = e.clientY || (e.touches && e.touches[0].clientY);
+          this.dragStartX = cx;
+          this.dragStartY = cy;
+          this.pointerDownPos = { x: cx, y: cy };
+          this.vx = 0;
+          this.vy = 0;
+          e.stopPropagation();
+        };
+
+        const onMove = (e) => {
+          if (!this.isDragging) return;
+          const cx = e.clientX || (e.touches && e.touches[0].clientX);
+          const cy = e.clientY || (e.touches && e.touches[0].clientY);
+          const dx = cx - this.dragStartX;
+          const dy = cy - this.dragStartY;
+          this.x += dx;
+          this.y += dy;
+          this.dragStartX = cx;
+          this.dragStartY = cy;
+          this.vx = dx * 0.45;
+          this.vy = dy * 0.45;
+        };
+
+        const onUp = (e) => {
+          if (!this.isDragging) return;
+          this.isDragging = false;
+          const cx = e.clientX || (e.changedTouches && e.changedTouches[0].clientX);
+          const cy = e.clientY || (e.changedTouches && e.changedTouches[0].clientY);
+          const dist = Math.hypot(cx - this.pointerDownPos.x, cy - this.pointerDownPos.y);
+
+          // Tap without displacement triggers rupture pop
+          if (dist < 6) {
+            popBalloonById(this.id, true);
+          }
+        };
+
+        this.el.addEventListener('pointerdown', onDown);
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerup', onUp);
+      }
+
+      updatePhysics(wind) {
+        if (!this.isDragging) {
+          // Archimedes upward buoyancy vs aerodynamic drag
+          const buoyancy = -0.16;
+          const cd = 0.008;
+          const dragY = cd * (this.vy * Math.abs(this.vy));
+          this.vy += buoyancy - dragY;
+
+          // Cap terminal ascent velocity between -3.5 and -5.0 px/frame
+          if (this.vy < -4.4) this.vy = -4.4;
+
+          this.vx += (wind - this.vx) * 0.035;
+          this.x += this.vx;
+          this.y += this.vy;
+
+          // Ceiling Soft-Spring Cushioned Boundary at y = 80px
+          const ceilingY = 90;
+          if (this.y < ceilingY) {
+            this.y = ceilingY;
+            this.vy = -this.vy * 0.38 + 0.3; // gentle spring bounce
+            this.squashX = 1.12;
+            this.squashY = 0.88;
+          }
+
+          // Wall boundary rebound
+          if (this.x < 90) { this.x = 90; this.vx *= -0.7; }
+          if (this.x > window.innerWidth - 90) { this.x = window.innerWidth - 90; this.vx *= -0.7; }
         }
-      };
 
-      stage.appendChild(wrapper);
-      activeBalloons.push(balloonObj);
-      updateBalloonCount();
+        // Restore squash and stretch
+        this.squashX += (1.0 - this.squashX) * 0.1;
+        this.squashY += (1.0 - this.squashY) * 0.1;
+
+        // Aerodynamic pendulum tilt
+        this.tilt = (this.vx - wind) * 3.8;
+
+        // Update DOM transform
+        this.el.style.left = `${this.x}px`;
+        this.el.style.top = `${this.y}px`;
+        const hull = this.el.querySelector('.balloon-hull');
+        if (hull) {
+          hull.style.transform = `rotate(${this.tilt}deg) scale(${this.squashX}, ${this.squashY})`;
+        }
+
+        // Update 7-segment Verlet Rope attached to knot
+        const knotX = this.x;
+        const knotY = this.y + 92;
+
+        this.nodes[0].x = knotX;
+        this.nodes[0].y = knotY;
+
+        for (let i = 1; i < this.nodes.length; i++) {
+          const n = this.nodes[i];
+          const vx = (n.x - n.oldX) * 0.94 + (wind * 0.4);
+          const vy = (n.y - n.oldY) * 0.94 + 0.22; // subtle string gravity
+          n.oldX = n.x;
+          n.oldY = n.y;
+          n.x += vx;
+          n.y += vy;
+        }
+
+        // Iterative distance constraints (3 passes)
+        for (let pass = 0; pass < 3; pass++) {
+          for (let i = 0; i < this.nodes.length - 1; i++) {
+            const n1 = this.nodes[i];
+            const n2 = this.nodes[i + 1];
+            const dx = n2.x - n1.x;
+            const dy = n2.y - n1.y;
+            const dist = Math.hypot(dx, dy) || 0.001;
+            const diff = (dist - this.segmentLength) / dist;
+            if (i === 0) {
+              n2.x -= dx * diff;
+              n2.y -= dy * diff;
+            } else {
+              n1.x += dx * diff * 0.5;
+              n1.y += dy * diff * 0.5;
+              n2.x -= dx * diff * 0.5;
+              n2.y -= dy * diff * 0.5;
+            }
+          }
+        }
+      }
+
+      drawRope(ctx) {
+        if (this.nodes.length < 2) return;
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.moveTo(this.nodes[0].x, this.nodes[0].y);
+        for (let i = 1; i < this.nodes.length - 1; i++) {
+          const xc = (this.nodes[i].x + this.nodes[i + 1].x) / 2;
+          const yc = (this.nodes[i].y + this.nodes[i + 1].y) / 2;
+          ctx.quadraticCurveTo(this.nodes[i].x, this.nodes[i].y, xc, yc);
+        }
+        ctx.lineTo(this.nodes[this.nodes.length - 1].x, this.nodes[this.nodes.length - 1].y);
+        ctx.stroke();
+        ctx.restore();
+      }
     }
 
-    function removeBalloonById(id) {
-      const balloon = activeBalloons.find(b => b.id === id);
-      if (balloon) triggerPopAnimation(balloon);
-    }
+    // Global Physics Tick Loop
+    let globalWindTime = 0;
+    function physicsLoop() {
+      globalWindTime += 0.015;
+      const wind = Math.sin(globalWindTime) * 0.65 + Math.cos(globalWindTime * 0.3) * 0.3;
 
-    function triggerPopAnimation(balloonObj) {
-      if (!balloonObj || !balloonObj.el) return;
-      playPopSound();
+      stringCtx.clearRect(0, 0, stringCanvas.width, stringCanvas.height);
 
-      // Confetti burst from balloon coordinates
-      const rect = balloonObj.el.getBoundingClientRect();
-      confetti({
-        particleCount: 40,
-        spread: 60,
-        origin: {
-          x: (rect.left + rect.width / 2) / window.innerWidth,
-          y: (rect.top + rect.height / 2) / window.innerHeight
-        }
+      balloons.forEach(b => {
+        b.updatePhysics(wind);
+        b.drawRope(stringCtx);
       });
 
-      balloonObj.el.classList.add('balloon-popping');
+      requestAnimationFrame(physicsLoop);
+    }
+
+    function addBalloon(entry) {
+      if (balloons.some(b => b.id === entry.id)) return;
+      const b = new BalloonInstance(entry);
+      balloons.push(b);
+      document.getElementById('wallActiveCount').innerText = balloons.length;
+    }
+
+    function popBalloonById(id, broadcast) {
+      const idx = balloons.findIndex(b => b.id === id);
+      if (idx === -1) return;
+      const b = balloons[idx];
+
+      playLatexPop();
+
+      // Multi-color confetti burst
+      const rx = b.x / window.innerWidth;
+      const ry = b.y / window.innerHeight;
+      confetti({
+        particleCount: 50,
+        spread: 70,
+        origin: { x: rx, y: ry },
+        colors: ['#38bdf8', '#fb7185', '#34d399', '#fbbf24', '#c084fc', '#ffffff']
+      });
+
+      // Quick CSS scale pop
+      b.el.style.transition = 'transform 0.15s ease-out, opacity 0.15s ease-out';
+      b.el.style.transform = `translate(-50%, -50%) scale(1.6)`;
+      b.el.style.opacity = '0';
+
       setTimeout(() => {
-        if (balloonObj.el.parentElement) {
-          balloonObj.el.parentElement.removeChild(balloonObj.el.el || balloonObj.el);
-        }
-        activeBalloons = activeBalloons.filter(b => b.id !== balloonObj.id);
-        updateBalloonCount();
-      }, 240);
+        if (b.el.parentElement) b.el.parentElement.removeChild(b.el);
+        balloons.splice(idx, 1);
+        document.getElementById('wallActiveCount').innerText = balloons.length;
+      }, 150);
+
+      if (broadcast) {
+        broadcastMessage({ action: 'POP', id: id });
+      }
     }
 
     function popAllBalloons() {
-      if (mqttClient && mqttClient.connected) {
-        const topic = `exhibition/guestbook/${currentRoom}/balloons`;
-        mqttClient.publish(topic, JSON.stringify({ action: 'POP_ALL' }));
-      } else {
-        activeBalloons.forEach(b => triggerPopAnimation(b));
+      const list = [...balloons];
+      list.forEach((b, i) => {
+        setTimeout(() => popBalloonById(b.id, true), i * 60);
+      });
+    }
+
+    /* ----------------------------------------------------
+       7. MULTI-DEVICE ZERO-BACKEND REAL-TIME SYNC
+       ---------------------------------------------------- */
+    function initSyncNetwork() {
+      // 1. Cross-tab instant sync via BroadcastChannel
+      try {
+        broadcastChannel = new BroadcastChannel(`guestbook_${roomCode}`);
+        broadcastChannel.onmessage = (ev) => handleSyncPayload(ev.data);
+      } catch (e) {
+        // Fallback gracefully
       }
-    }
 
-    function updateBalloonCount() {
-      document.getElementById('balloonCountDisplay').innerText = activeBalloons.length;
-    }
+      // 2. Public MQTT over Secure WebSockets (EMQX Public Broker)
+      const clientId = 'guest_' + Math.random().toString(16).slice(2, 10);
+      const topic = `exhibition/sky/${roomCode}/feed`;
 
-    // Animation Tick Loop
-    function animationLoop() {
-      const stageRect = stage.getBoundingClientRect();
-      const stageWidth = stageRect.width || window.innerWidth;
-      const stageHeight = stageRect.height || window.innerHeight;
-
-      activeBalloons.forEach(b => {
-        b.wobble += b.wobbleSpeed;
-        b.x += b.vx + Math.sin(b.wobble) * 0.6;
-        b.y += b.vy;
-
-        // Bounce horizontally
-        if (b.x < 110) { b.x = 110; b.vx *= -1; }
-        if (b.x > stageWidth - 110) { b.x = stageWidth - 110; b.vx *= -1; }
-
-        // Top constraint (soft cushion bounce)
-        if (b.y < 130) {
-          b.y = 130;
-          b.vy = 0.4;
-        }
-
-        b.el.style.left = `${b.x}px`;
-        b.el.style.top = `${b.y}px`;
+      mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
+        clientId: clientId,
+        clean: true,
+        reconnectPeriod: 3000
       });
 
-      requestAnimationFrame(animationLoop);
-    }
-    requestAnimationFrame(animationLoop);
+      mqttClient.on('connect', () => {
+        const pill = document.getElementById('connPill');
+        pill.classList.remove('hidden');
+        document.getElementById('connPillText').innerText = 'Cloud WebSocket Connected';
+        mqttClient.subscribe(topic);
+      });
 
-    // --- Admin Security & Modal Management ---
-    function openAdminModal() {
-      document.getElementById('adminModal').classList.remove('hidden');
-      document.getElementById('adminPinScreen').classList.remove('hidden');
-      document.getElementById('adminDashboardScreen').classList.add('hidden');
-      document.getElementById('pinError').classList.add('hidden');
-      document.getElementById('adminPinInput').value = '';
-    }
-
-    function closeAdminModal() {
-      document.getElementById('adminModal').classList.add('hidden');
+      mqttClient.on('message', (t, msg) => {
+        try {
+          const payload = JSON.parse(msg.toString());
+          handleSyncPayload(payload);
+        } catch (e) {}
+      });
     }
 
-    function verifyAdminPin(e) {
+    function broadcastMessage(payload) {
+      if (broadcastChannel) broadcastChannel.postMessage(payload);
+      if (mqttClient && mqttClient.connected) {
+        const topic = `exhibition/sky/${roomCode}/feed`;
+        mqttClient.publish(topic, JSON.stringify(payload));
+      }
+    }
+
+    function handleSyncPayload(payload) {
+      if (!payload) return;
+      if (payload.action === 'NEW_BALLOON') {
+        recordInLedger(payload.data);
+        addBalloon(payload.data);
+      } else if (payload.action === 'POP') {
+        popBalloonById(payload.id, false);
+      }
+    }
+
+    /* ----------------------------------------------------
+       8. KIOSK SUBMISSION & 3-SECOND AUTO-RESET
+       ---------------------------------------------------- */
+    function submitGuestbook(e) {
       e.preventDefault();
-      const entered = document.getElementById('adminPinInput').value.trim();
-      if (entered === APP_CONFIG.adminPin) {
-        document.getElementById('adminPinScreen').classList.add('hidden');
-        document.getElementById('adminDashboardScreen').classList.remove('hidden');
-        document.getElementById('adminRoomCodeDisplay').innerText = currentRoom;
-        updateLedgerCounters();
-      } else {
-        document.getElementById('pinError').classList.remove('hidden');
+      const name = document.getElementById('inputName').value.trim();
+      const org = document.getElementById('inputOrg').value.trim();
+      const streams = generateSignatureStreams();
+
+      if (!streams) {
+        alert('Please draw your autograph before launching the balloon!');
+        return;
       }
+
+      const now = new Date();
+      const entryData = {
+        id: 'sky_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        name: name,
+        org: org,
+        themeIndex: selectedThemeIndex,
+        displayWhitePNG: streams.displayWhitePNG,
+        pdfDarkPNG: streams.pdfDarkPNG,
+        timestamp: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        date: now.toLocaleDateString()
+      };
+
+      // Broadcast and save
+      recordInLedger(entryData);
+      addBalloon(entryData);
+      broadcastMessage({ action: 'NEW_BALLOON', data: entryData });
+
+      // 3-Second Auto-Reset Timer UI
+      const notice = document.getElementById('kioskSuccessNotice');
+      const counterSpan = document.getElementById('resetSeconds');
+      const submitBtn = document.getElementById('btnSubmitForm');
+
+      notice.classList.remove('hidden');
+      submitBtn.disabled = true;
+
+      let remaining = 3;
+      counterSpan.innerText = remaining;
+      const timer = setInterval(() => {
+        remaining -= 1;
+        counterSpan.innerText = remaining;
+        if (remaining <= 0) {
+          clearInterval(timer);
+          document.getElementById('inputName').value = '';
+          document.getElementById('inputOrg').value = '';
+          clearSignature();
+          notice.classList.add('hidden');
+          submitBtn.disabled = false;
+        }
+      }, 1000);
     }
 
-    function clearLedgerConfirm() {
-      if (confirm('Are you sure you want to erase all stored guest signatures for this room? This action cannot be undone.')) {
-        localStorage.removeItem(STORAGE_LEDGER_KEY);
-        updateLedgerCounters();
-        alert('All guestbook records for this room have been cleared.');
-      }
-    }
-
-    // --- Official PDF Guestbook Export (using jsPDF) ---
-    async function generateGuestbookPDF() {
-      const records = getStoredLedger();
+    /* ----------------------------------------------------
+       9. OFFICIAL A4 PDF GUESTBOOK EXPORT (jsPDF)
+       ---------------------------------------------------- */
+    async function exportGuestbookPDF() {
+      const records = getLedger();
       if (records.length === 0) {
-        alert('There are no signatures recorded yet to export.');
+        alert('No visitors have signed the guestbook yet.');
         return;
       }
 
@@ -819,107 +1142,189 @@
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
 
-      // Header Banner
-      doc.setFillColor(15, 23, 42); // slate-900
-      doc.rect(0, 0, pageWidth, 42, 'F');
+      function drawBanner(pageNum, totalPages) {
+        // Formal Header Banner
+        doc.setFillColor(15, 23, 42); // deep slate #0f172a
+        doc.rect(0, 0, pageWidth, 36, 'F');
 
-      doc.setTextColor(255, 255, 255);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(22);
-      doc.text('EXHIBITION GUESTBOOK', 14, 20);
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(18);
+        doc.text('EXHIBITION OFFICIAL GUESTBOOK', 14, 16);
 
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(10);
-      doc.setTextColor(148, 163, 184); // slate-400
-      doc.text(`Room: ${currentRoom}  |  Generated: ${new Date().toLocaleString()}`, 14, 28);
-      doc.text(`Total Signatures: ${records.length}`, 14, 35);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(186, 230, 253);
+        doc.text(`Exhibition Room: ${roomCode}   |   Date: ${new Date().toLocaleDateString()}   |   Total Signatures: ${records.length}`, 14, 26);
+      }
 
-      let currentY = 52;
+      let currentY = 46;
       const margin = 14;
-      const colWidth = (pageWidth - (margin * 2) - 8) / 2;
-      const cardHeight = 38;
+      const colGap = 8;
+      const colWidth = (pageWidth - (margin * 2) - colGap) / 2;
+      const cardHeight = 36;
 
       for (let i = 0; i < records.length; i++) {
         const item = records[i];
-        const isSecondCol = i % 2 !== 0;
-        const currentX = isSecondCol ? margin + colWidth + 8 : margin;
+        const isCol2 = i % 2 !== 0;
+        const currentX = isCol2 ? margin + colWidth + colGap : margin;
 
-        // Card Frame
-        doc.setFillColor(248, 250, 252);
+        // Two-column Clean Bordered Card
+        doc.setFillColor(255, 255, 255);
         doc.setDrawColor(226, 232, 240);
         doc.roundedRect(currentX, currentY, colWidth, cardHeight, 3, 3, 'FD');
 
-        // Visitor Name
+        // Attendee Name
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(11);
         doc.setTextColor(15, 23, 42);
         doc.text(doc.splitTextToSize(item.name, colWidth - 8)[0], currentX + 5, currentY + 8);
 
-        // Subtext (Org & Timestamp)
+        // Subtitle & Exact Timestamp
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(8);
         doc.setTextColor(100, 116, 139);
-        const sub = `${item.org ? item.org + ' • ' : ''}${item.timestamp || ''}`;
+        const sub = `${item.org ? item.org + ' • ' : ''}${item.date || ''} ${item.timestamp || ''}`;
         doc.text(doc.splitTextToSize(sub, colWidth - 8)[0], currentX + 5, currentY + 13);
 
-        // Render vector signature to offscreen canvas and insert as PNG
-        if (item.svgPath) {
-          const offCanvas = document.createElement('canvas');
-          offCanvas.width = 300;
-          offCanvas.height = 120;
-          const offCtx = offCanvas.getContext('2d');
-          
-          offCtx.fillStyle = '#ffffff';
-          offCtx.fillRect(0, 0, 300, 120);
-
-          const path2d = new Path2D(item.svgPath);
-          offCtx.strokeStyle = '#1e1b4b'; // dark ink
-          offCtx.lineWidth = 4;
-          offCtx.lineCap = 'round';
-          offCtx.lineJoin = 'round';
-          offCtx.stroke(path2d);
-
-          const imgData = offCanvas.toDataURL('image/png');
-          doc.addImage(imgData, 'PNG', currentX + 5, currentY + 15, colWidth - 10, 20);
+        // Vector/High-contrast Dark Ink Signature Graphic
+        if (item.pdfDarkPNG) {
+          doc.addImage(item.pdfDarkPNG, 'PNG', currentX + 5, currentY + 15, colWidth - 10, 18);
         }
 
-        // New Row & Page Overflow Logic
-        if (isSecondCol) {
+        if (isCol2) {
           currentY += cardHeight + 6;
-          if (currentY + cardHeight > pageHeight - 15) {
+          if (currentY + cardHeight > pageHeight - 16 && i < records.length - 1) {
             doc.addPage();
-            currentY = 20;
+            currentY = 46;
           }
         }
       }
 
-      // Add Page Numbers
+      // Dynamic Page Numbering in Footers
       const totalPages = doc.internal.getNumberOfPages();
       for (let p = 1; p <= totalPages; p++) {
         doc.setPage(p);
+        drawBanner(p, totalPages);
+
         doc.setFontSize(8);
         doc.setTextColor(148, 163, 184);
-        doc.text(`Page ${p} of ${totalPages}`, pageWidth - 28, pageHeight - 8);
+        doc.text(`Official Exhibition Registry Archive  —  Page ${p} of ${totalPages}`, margin, pageHeight - 8);
       }
 
-      // Save output PDF file
-      doc.save(`Exhibition-Guestbook-${currentRoom}-${Date.now()}.pdf`);
+      doc.save(`Guestbook-Archive-${roomCode}-${Date.now()}.pdf`);
     }
 
-    // --- Window Initialization ---
+    function clearLedgerRecords() {
+      if (confirm('Erase all stored signatures in the local database?')) {
+        localStorage.removeItem(STORAGE_KEY);
+        refreshStatsCounters();
+        alert('Ledger cleared.');
+      }
+    }
+
+    /* ----------------------------------------------------
+       10. VIEW SWITCHING & QR CODE MODAL
+       ---------------------------------------------------- */
+    function switchMode(m) {
+      currentMode = m;
+      const screenKiosk = document.getElementById('screenKiosk');
+      const screenWall = document.getElementById('screenWall');
+      const btnKiosk = document.getElementById('btnSwitchKiosk');
+      const btnWall = document.getElementById('btnSwitchWall');
+
+      if (m === 'kiosk') {
+        screenKiosk.classList.remove('hidden');
+        screenWall.classList.add('hidden');
+        btnKiosk.className = 'px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-sky-600 text-white shadow-md shadow-sky-600/30 transition';
+        btnWall.className = 'px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold text-slate-700 hover:bg-slate-200/60 transition';
+        resizePad();
+      } else {
+        screenKiosk.classList.add('hidden');
+        screenWall.classList.remove('hidden');
+        btnWall.className = 'px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-sky-600 text-white shadow-md shadow-sky-600/30 transition';
+        btnKiosk.className = 'px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold text-slate-700 hover:bg-slate-200/60 transition';
+        resizeStringCanvas();
+      }
+    }
+
+    function toggleQRModal() {
+      const modal = document.getElementById('modalQR');
+      modal.classList.toggle('hidden');
+      if (!modal.classList.contains('hidden')) {
+        const qrBox = document.getElementById('qrcodeBox');
+        qrBox.innerHTML = '';
+        const kioskURL = window.location.origin + window.location.pathname + `?room=${roomCode}#kiosk`;
+        document.getElementById('qrUrlLabel').innerText = kioskURL;
+        new QRCode(qrBox, {
+          text: kioskURL,
+          width: 180,
+          height: 180,
+          colorDark: '#0f172a',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      }
+    }
+
+    function openAdmin() {
+      document.getElementById('modalAdmin').classList.remove('hidden');
+      document.getElementById('adminPinView').classList.remove('hidden');
+      document.getElementById('adminPanelView').classList.add('hidden');
+      document.getElementById('adminPinError').classList.add('hidden');
+      document.getElementById('inputAdminPin').value = '';
+    }
+
+    function closeAdmin() {
+      document.getElementById('modalAdmin').classList.add('hidden');
+    }
+
+    function handleAdminLogin(e) {
+      e.preventDefault();
+      const pin = document.getElementById('inputAdminPin').value.trim();
+      if (pin === '1234') {
+        document.getElementById('adminPinView').classList.add('hidden');
+        document.getElementById('adminPanelView').classList.remove('hidden');
+        refreshStatsCounters();
+      } else {
+        document.getElementById('adminPinError').classList.remove('hidden');
+      }
+    }
+
+    // Live Clock on Display Wall
+    setInterval(() => {
+      const clock = document.getElementById('wallLiveClock');
+      if (clock) clock.innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }, 1000);
+
+    /* ----------------------------------------------------
+       11. INITIALIZATION
+       ---------------------------------------------------- */
     window.addEventListener('load', () => {
       lucide.createIcons();
-      resizeCanvas();
-      initCloudSync();
-      updateLedgerCounters();
+      resizeCloudCanvas();
+      renderClouds();
+      resizeStringCanvas();
+      resizePad();
+      initSyncNetwork();
+      refreshStatsCounters();
 
-      // Check view hash in URL (#display or #laptop)
-      if (window.location.hash === '#display') {
-        switchView('display');
+      // Populate existing stored balloons into the sky
+      const history = getLedger();
+      history.slice(-18).forEach(entry => addBalloon(entry));
+
+      requestAnimationFrame(physicsLoop);
+
+      if (window.location.hash === '#wall') {
+        switchMode('wall');
       }
     });
 
-    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('resize', () => {
+      resizeCloudCanvas();
+      resizeStringCanvas();
+      resizePad();
+    });
   </script>
 </body>
 </html>
