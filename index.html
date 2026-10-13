@@ -28,127 +28,69 @@
       --sky-haze: #bae6fd;
     }
 
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
     body {
       font-family: 'Plus Jakarta Sans', sans-serif;
       touch-action: manipulation;
-      user-select: none;
-      -webkit-user-select: none;
+      overflow: hidden;
     }
 
     .font-signature {
       font-family: 'Caveat', cursive;
     }
 
-    /* Multi-stop daytime open sky gradient */
-    .sky-viewport {
+    /* Daytime Sky Gradient */
+    .sky-bg {
       background: linear-gradient(180deg, var(--sky-zenith) 0%, var(--sky-mid1) 28%, var(--sky-horizon) 68%, var(--sky-haze) 100%);
     }
 
-    /* Sun flare & conic soft light rays */
-    .sun-flare {
+    /* Ambient Sun Flare & Translucent Rays */
+    .sun-core {
       position: absolute;
-      top: -120px;
-      right: -80px;
-      width: 540px;
-      height: 540px;
-      background: radial-gradient(circle, rgba(255, 255, 255, 0.95) 0%, rgba(254, 240, 138, 0.45) 30%, rgba(255, 255, 255, 0.1) 55%, transparent 75%);
+      top: -100px;
+      right: -60px;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.95) 0%, rgba(254, 240, 138, 0.45) 32%, rgba(255, 255, 255, 0.08) 60%, transparent 75%);
       pointer-events: none;
       z-index: 2;
     }
 
-    .sun-rays {
+    .sun-beams {
       position: absolute;
-      top: -200px;
-      right: -150px;
-      width: 800px;
-      height: 800px;
-      background: repeating-conic-gradient(from 120deg at 50% 50%, rgba(255, 255, 255, 0.12) 0deg 8deg, transparent 8deg 24deg);
+      top: -240px;
+      right: -200px;
+      width: 900px;
+      height: 900px;
+      background: repeating-conic-gradient(from 130deg at 50% 50%, rgba(255, 255, 255, 0.12) 0deg 8deg, transparent 8deg 24deg);
       mix-blend-mode: overlay;
-      opacity: 0.65;
+      opacity: 0.7;
       pointer-events: none;
       z-index: 2;
-      animation: rayPulse 16s ease-in-out infinite alternate;
+      animation: beamBreathe 14s ease-in-out infinite alternate;
     }
 
-    @keyframes rayPulse {
-      0% { transform: scale(1) rotate(0deg); opacity: 0.55; }
-      100% { transform: scale(1.08) rotate(4deg); opacity: 0.75; }
+    @keyframes beamBreathe {
+      0% { transform: scale(1) rotate(0deg); opacity: 0.6; }
+      100% { transform: scale(1.06) rotate(3deg); opacity: 0.8; }
     }
 
-    /* 3D Pearlescent Latex Balloon Structure */
-    .balloon-unit {
-      position: absolute;
-      transform: translate(-50%, -50%);
-      will-change: transform, left, top;
-      cursor: grab;
-      z-index: 10;
-      touch-action: none;
-    }
-
-    .balloon-unit:active {
-      cursor: grabbing;
-    }
-
-    .balloon-hull {
-      position: relative;
-      width: 148px;
-      height: 182px;
-      border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
-      transform-origin: center bottom;
-      transition: box-shadow 0.2s ease;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 14px 10px 18px 10px;
-    }
-
-    /* Pearlescent high-contrast spherical glints */
-    .balloon-hull::before {
-      content: '';
-      position: absolute;
-      top: 14px;
-      left: 20px;
-      width: 38px;
-      height: 24px;
-      border-radius: 50%;
-      background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0) 75%);
-      transform: rotate(-32deg);
-      pointer-events: none;
-    }
-
-    .balloon-hull::after {
-      content: '';
-      position: absolute;
-      top: 36px;
-      left: 17px;
-      width: 12px;
-      height: 10px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.7);
-      pointer-events: none;
-    }
-
-    /* Crimped tied knot */
-    .balloon-knot {
-      width: 13px;
-      height: 9px;
-      margin: -2px auto 0 auto;
-      border-radius: 2px 2px 5px 5px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.25);
-    }
-
-    /* Glassmorphism Surface for UI Kiosk and HUD */
-    .glass-panel {
+    /* Glassmorphism UI Panels */
+    .glass-card {
       background: rgba(255, 255, 255, 0.86);
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
-      border: 1px solid rgba(255, 255, 255, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.7);
       box-shadow: 0 20px 45px -10px rgba(14, 116, 144, 0.22), 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
     }
 
     .glass-input {
-      background: rgba(255, 255, 255, 0.75);
+      background: rgba(255, 255, 255, 0.8);
       border: 1px solid rgba(203, 213, 225, 0.8);
       color: #0f172a;
     }
@@ -158,18 +100,138 @@
       border-color: #0284c7;
       box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.35);
     }
+
+    /* -------------------------------------------
+       3D PEARLESCENT LATEX BALLOON STYLING
+       ------------------------------------------- */
+    .balloon-wrapper {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      will-change: transform, left, top;
+      cursor: grab;
+      z-index: 20;
+      touch-action: none;
+    }
+
+    .balloon-wrapper:active {
+      cursor: grabbing;
+    }
+
+    /* True Teardrop Shape with 3D Spherical Volume */
+    .balloon-bulb {
+      position: relative;
+      width: 154px;
+      height: 196px;
+      border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+      transform-origin: 50% 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 24px 14px 16px 14px;
+      box-shadow: 0 26px 42px -10px rgba(15, 23, 42, 0.32),
+                  0 12px 20px -8px rgba(0, 0, 0, 0.18);
+      transition: filter 0.2s ease;
+    }
+
+    .balloon-bulb:hover {
+      filter: brightness(1.05);
+    }
+
+    /* Pearlescent Primary Specular Glint (Top-Left) */
+    .balloon-bulb::before {
+      content: '';
+      position: absolute;
+      top: 14px;
+      left: 20px;
+      width: 44px;
+      height: 28px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.45) 45%, rgba(255, 255, 255, 0) 75%);
+      transform: rotate(-32deg);
+      pointer-events: none;
+    }
+
+    /* Subtle Secondary Glint */
+    .balloon-bulb::after {
+      content: '';
+      position: absolute;
+      top: 40px;
+      left: 17px;
+      width: 14px;
+      height: 11px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.7);
+      pointer-events: none;
+    }
+
+    /* Realistic Tied Latex Knot */
+    .balloon-knot-container {
+      position: relative;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: -3px;
+    }
+
+    .balloon-knot {
+      width: 14px;
+      height: 9px;
+      border-radius: 2px 2px 6px 6px;
+      box-shadow: inset 0 -2px 3px rgba(0,0,0,0.35), 0 2px 4px rgba(0,0,0,0.25);
+    }
+
+    .balloon-knot-skirt {
+      width: 18px;
+      height: 5px;
+      margin-top: -1px;
+      border-radius: 50% 50% 40% 40%;
+      opacity: 0.95;
+    }
+
+    /* Curving Signature Perspective Overlay */
+    .balloon-signature-box {
+      width: 100%;
+      height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 4px 0 2px 0;
+      filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.28));
+    }
+
+    .balloon-signature-img {
+      max-width: 95%;
+      max-height: 95%;
+      object-fit: contain;
+      transform: perspective(200px) rotateX(4deg);
+      opacity: 0.95;
+    }
+
+    /* Rupture Burst Animation */
+    .balloon-bursting {
+      animation: burstAnim 0.16s forwards cubic-bezier(0.1, 0.9, 0.2, 1);
+      pointer-events: none;
+    }
+
+    @keyframes burstAnim {
+      0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+      40% { transform: translate(-50%, -50%) scale(1.35); opacity: 0.8; }
+      100% { transform: translate(-50%, -50%) scale(1.9); opacity: 0; }
+    }
   </style>
 </head>
-<body class="bg-slate-900 text-slate-900 overflow-hidden w-screen h-screen">
+<body class="sky-bg text-slate-900 w-screen h-screen overflow-hidden">
 
-  <!-- ================= PROCEDURAL 60 FPS CLOUD CANVAS LAYER ================= -->
+  <!-- ================= PROCEDURAL 60 FPS CLOUD LAYER ================= -->
   <canvas id="cloudCanvas" class="fixed inset-0 pointer-events-none z-[1] w-full h-full"></canvas>
 
-  <!-- Ambient Sky Glow & Light Rays -->
-  <div class="sun-flare"></div>
-  <div class="sun-rays"></div>
+  <!-- Sun Lighting Highlights -->
+  <div class="sun-core"></div>
+  <div class="sun-beams"></div>
 
-  <!-- Global Navigation Bar -->
+  <!-- Header Navigation -->
   <header class="fixed top-0 inset-x-0 h-16 bg-white/70 backdrop-blur-xl border-b border-white/60 px-4 sm:px-8 flex items-center justify-between z-40">
     <div class="flex items-center space-x-3">
       <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-500 via-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/25">
@@ -184,14 +246,14 @@
       </div>
     </div>
 
-    <div class="flex items-center space-x-2.5">
+    <div class="flex items-center space-x-2">
       <!-- Live Sync Status -->
       <div id="connPill" class="hidden sm:flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-700 text-xs font-semibold">
         <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
         <span id="connPillText">Real-Time Sync Active</span>
       </div>
 
-      <!-- View Switcher -->
+      <!-- Mode Switcher -->
       <button id="btnSwitchKiosk" onclick="switchMode('kiosk')" class="px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-sky-600 text-white shadow-md shadow-sky-600/30 transition">
         <i data-lucide="pen-tool" class="w-4 h-4 inline mr-1"></i> Screen A: Kiosk
       </button>
@@ -202,23 +264,23 @@
   </header>
 
   <!-- ================= SCREEN A: LAPTOP / MOBILE KIOSK ================= -->
-  <main id="screenKiosk" class="relative z-30 w-full h-full pt-20 pb-6 px-4 flex items-center justify-center overflow-y-auto sky-viewport">
-    <div class="glass-panel w-full max-w-xl rounded-3xl p-6 sm:p-8 space-y-5 my-auto">
+  <main id="screenKiosk" class="relative z-30 w-full h-full pt-20 pb-6 px-4 flex items-center justify-center overflow-y-auto">
+    <div class="glass-card w-full max-w-xl rounded-3xl p-6 sm:p-8 space-y-5 my-auto">
       <div class="text-center space-y-1">
         <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Leave Your Mark in the Sky</h2>
-        <p class="text-xs sm:text-sm text-slate-600 font-medium">Draw your autograph to launch an interactive 3D helium balloon on the big hall display.</p>
+        <p class="text-xs sm:text-sm text-slate-600 font-medium">Draw your autograph to release a pearlescent 3D helium balloon on the exhibition wall.</p>
       </div>
 
       <form id="kioskForm" onsubmit="submitGuestbook(event)" class="space-y-4">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <div>
             <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1.5">Attendee Name *</label>
-            <input type="text" id="inputName" required maxlength="32" placeholder="e.g. Dr. Maya Lin"
+            <input type="text" id="inputName" required maxlength="32" placeholder="e.g. Elena Rostova"
               class="w-full glass-input px-3.5 py-2.5 rounded-xl text-sm font-semibold outline-none transition">
           </div>
           <div>
             <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1.5">Affiliation / Title</label>
-            <input type="text" id="inputOrg" maxlength="36" placeholder="e.g. Curator @ Met Museum"
+            <input type="text" id="inputOrg" maxlength="36" placeholder="e.g. Creative Technologist"
               class="w-full glass-input px-3.5 py-2.5 rounded-xl text-sm font-semibold outline-none transition">
           </div>
         </div>
@@ -227,7 +289,7 @@
         <div>
           <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1.5">Balloon Theme</label>
           <div class="grid grid-cols-7 gap-2" id="colorPickerContainer">
-            <!-- Rendered by JS -->
+            <!-- Injected via JavaScript -->
           </div>
         </div>
 
@@ -235,11 +297,11 @@
         <div>
           <div class="flex items-center justify-between mb-1.5">
             <div class="flex items-center space-x-2">
-              <label class="text-[11px] font-bold uppercase tracking-wider text-slate-700">Stylus / Finger Signature *</label>
+              <label class="text-[11px] font-bold uppercase tracking-wider text-slate-700">Digital Signature *</label>
               <span id="sigValidBadge" class="hidden text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">Accepted</span>
             </div>
 
-            <!-- Stroke Weight Selector & Clear Pad -->
+            <!-- Weight Switcher & Clear -->
             <div class="flex items-center space-x-2">
               <div class="flex items-center bg-slate-200/80 p-0.5 rounded-lg text-xs">
                 <button type="button" onclick="setStrokeWeight(2)" id="strokeBtn-2" class="px-2 py-0.5 rounded font-bold text-slate-600 hover:text-slate-900">Fine</button>
@@ -255,22 +317,22 @@
           <div class="relative w-full h-40 rounded-2xl overflow-hidden border border-slate-300/80 bg-slate-900 shadow-inner">
             <canvas id="padCanvas" class="w-full h-full block cursor-crosshair touch-none"></canvas>
             <div id="padPlaceholder" class="absolute inset-0 flex items-center justify-center pointer-events-none text-slate-500 font-signature text-2xl select-none">
-              Sign smoothly with mouse, stylus, or touch
+              Sign with finger, mouse, or stylus
             </div>
           </div>
         </div>
 
-        <!-- Launch Button -->
+        <!-- Release Button -->
         <button type="submit" id="btnSubmitForm" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-extrabold text-base tracking-wide shadow-xl shadow-sky-600/30 active:scale-[0.99] transition flex items-center justify-center space-x-2">
           <i data-lucide="send" class="w-5 h-5"></i>
-          <span>Release Balloon to Sky Display</span>
+          <span>Release Balloon into Open Sky</span>
         </button>
       </form>
 
-      <!-- 3-Second Auto-Reset Modal Banner -->
+      <!-- 3-Second Auto Reset Modal Banner -->
       <div id="kioskSuccessNotice" class="hidden rounded-2xl bg-emerald-600 text-white p-4 shadow-xl text-center space-y-1 animate-fade-in">
         <p class="font-extrabold text-base flex items-center justify-center gap-1.5">
-          <i data-lucide="check-circle" class="w-5 h-5"></i> Balloon Airborne!
+          <i data-lucide="check-circle" class="w-5 h-5"></i> Balloon Released!
         </p>
         <p class="text-xs text-emerald-100 font-medium">Terminal resets in <span id="resetSeconds" class="font-bold underline">3</span>s for next attendee...</p>
       </div>
@@ -278,16 +340,16 @@
   </main>
 
   <!-- ================= SCREEN B: BIG DISPLAY / PROJECTOR WALL ================= -->
-  <section id="screenWall" class="hidden relative w-full h-full sky-viewport overflow-hidden pt-16">
-    <!-- Overlay Physics String Canvas -->
-    <canvas id="stringCanvas" class="absolute inset-0 z-[9] pointer-events-none w-full h-full"></canvas>
+  <section id="screenWall" class="hidden relative w-full h-full overflow-hidden pt-16">
+    <!-- 7-Segment Verlet Dynamic Strings Canvas -->
+    <canvas id="stringCanvas" class="absolute inset-0 z-[15] pointer-events-none w-full h-full"></canvas>
 
-    <!-- Interactive Balloon DOM Layer -->
-    <div id="balloonStage" class="relative w-full h-full overflow-hidden z-10"></div>
+    <!-- Balloon Floating Container -->
+    <div id="balloonStage" class="relative w-full h-full overflow-hidden z-20"></div>
 
     <!-- HUD Overlay Top-Left: Live Stats & Clock -->
     <div class="absolute top-20 left-6 z-30 pointer-events-none space-y-2">
-      <div class="glass-panel px-4 py-2.5 rounded-2xl flex items-center space-x-4">
+      <div class="glass-card px-4 py-2.5 rounded-2xl flex items-center space-x-4">
         <div>
           <span class="block text-[10px] uppercase tracking-wider font-extrabold text-slate-500">In Atmosphere</span>
           <span id="wallActiveCount" class="text-2xl font-black text-sky-700">0</span>
@@ -307,11 +369,11 @@
 
     <!-- HUD Overlay Top-Right: Mobile Walk-Up QR & Admin -->
     <div class="absolute top-20 right-6 z-30 flex items-center space-x-2.5">
-      <button onclick="toggleAudio()" id="btnAudioMute" class="p-3 rounded-2xl glass-panel hover:bg-white text-slate-700 transition shadow">
+      <button onclick="toggleAudio()" id="btnAudioMute" class="p-3 rounded-2xl glass-card hover:bg-white text-slate-700 transition shadow">
         <i data-lucide="volume-2" id="iconAudio" class="w-5 h-5"></i>
       </button>
 
-      <button onclick="toggleQRModal()" class="px-3.5 py-3 rounded-2xl glass-panel hover:bg-white text-slate-800 font-bold text-xs flex items-center space-x-1.5 shadow transition">
+      <button onclick="toggleQRModal()" class="px-3.5 py-3 rounded-2xl glass-card hover:bg-white text-slate-800 font-bold text-xs flex items-center space-x-1.5 shadow transition">
         <i data-lucide="qr-code" class="w-4 h-4 text-sky-600"></i>
         <span>Mobile Walk-Up</span>
       </button>
@@ -321,7 +383,7 @@
         <span>Admin & PDF</span>
       </button>
 
-      <button onclick="toggleFullScreen()" class="p-3 rounded-2xl glass-panel hover:bg-white text-slate-700 transition shadow">
+      <button onclick="toggleFullScreen()" class="p-3 rounded-2xl glass-card hover:bg-white text-slate-700 transition shadow">
         <i data-lucide="maximize" class="w-5 h-5"></i>
       </button>
     </div>
@@ -329,14 +391,14 @@
 
   <!-- ================= QR CODE WALK-UP MODAL ================= -->
   <div id="modalQR" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="glass-panel w-full max-w-sm rounded-3xl p-6 text-center space-y-4">
+    <div class="glass-card w-full max-w-sm rounded-3xl p-6 text-center space-y-4">
       <div class="flex items-center justify-between">
         <h3 class="font-black text-lg text-slate-900">Scan & Sign from Phone</h3>
         <button onclick="toggleQRModal()" class="text-slate-400 hover:text-slate-700">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
-      <p class="text-xs text-slate-600">Point your phone camera to open this kiosk and launch your balloon in real-time.</p>
+      <p class="text-xs text-slate-600">Point your phone camera to launch your own balloon in real time.</p>
       <div class="bg-white p-4 rounded-2xl inline-block shadow-inner mx-auto">
         <div id="qrcodeBox"></div>
       </div>
@@ -348,7 +410,7 @@
 
   <!-- ================= PIN-PROTECTED ADMIN MODAL ================= -->
   <div id="modalAdmin" class="hidden fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="glass-panel w-full max-w-md rounded-3xl p-6 sm:p-8 space-y-5">
+    <div class="glass-card w-full max-w-md rounded-3xl p-6 sm:p-8 space-y-5">
 
       <!-- View 1: PIN Authentication -->
       <div id="adminPinView" class="space-y-4">
@@ -373,7 +435,7 @@
         </form>
       </div>
 
-      <!-- View 2: Admin Dashboard & Official A4 PDF Export -->
+      <!-- View 2: Dashboard & PDF Export -->
       <div id="adminPanelView" class="hidden space-y-5">
         <div class="flex items-center justify-between border-b border-slate-200 pb-3">
           <div>
@@ -409,19 +471,68 @@
     </div>
   </div>
 
-  <!-- ================= CORE APPLICATION LOGIC ================= -->
+  <!-- ================= SCRIPT LOGIC ================= -->
   <script>
     /* ----------------------------------------------------
-       1. COLOR SCHEMES (7 Pearlescent Schemes)
+       1. 7-COLOR PEARLESCENT THEMES (Rich 3D Shader Gradients)
        ---------------------------------------------------- */
     const BALLOON_THEMES = [
-      { id: 'azure', name: 'Azure Pearl', grad: 'radial-gradient(circle at 35% 25%, #60a5fa 0%, #2563eb 55%, #1d4ed8 100%)', knot: '#1e40af', rim: 'rgba(147, 197, 253, 0.7)' },
-      { id: 'ruby', name: 'Ruby Rose', grad: 'radial-gradient(circle at 35% 25%, #fb7185 0%, #e11d48 55%, #9f1239 100%)', knot: '#881337', rim: 'rgba(254, 205, 211, 0.7)' },
-      { id: 'emerald', name: 'Emerald Jade', grad: 'radial-gradient(circle at 35% 25%, #34d399 0%, #059669 55%, #064e3b 100%)', knot: '#064e3b', rim: 'rgba(167, 243, 208, 0.7)' },
-      { id: 'amber', name: 'Solar Amber', grad: 'radial-gradient(circle at 35% 25%, #fbbf24 0%, #d97706 55%, #92400e 100%)', knot: '#78350f', rim: 'rgba(253, 230, 138, 0.7)' },
-      { id: 'violet', name: 'Amethyst Violet', grad: 'radial-gradient(circle at 35% 25%, #c084fc 0%, #9333ea 55%, #581c87 100%)', knot: '#3b0764', rim: 'rgba(233, 213, 255, 0.7)' },
-      { id: 'coral', name: 'Coral Sunset', grad: 'radial-gradient(circle at 35% 25%, #fb923c 0%, #ea580c 55%, #9a3412 100%)', knot: '#7c2d12', rim: 'rgba(254, 215, 170, 0.7)' },
-      { id: 'indigo', name: 'Cosmic Indigo', grad: 'radial-gradient(circle at 35% 25%, #818cf8 0%, #4f46e5 55%, #312e81 100%)', knot: '#1e1b4b', rim: 'rgba(199, 210, 254, 0.7)' }
+      {
+        id: 'azure',
+        name: 'Azure Pearl',
+        bodyGrad: 'radial-gradient(circle at 38% 30%, #7dd3fc 0%, #38bdf8 26%, #0284c7 65%, #0369a1 95%)',
+        rimLight: 'rgba(224, 242, 254, 0.75)',
+        ambientShadow: 'rgba(3, 105, 161, 0.4)',
+        knotColor: '#0284c7'
+      },
+      {
+        id: 'ruby',
+        name: 'Ruby Rose',
+        bodyGrad: 'radial-gradient(circle at 38% 30%, #fda4af 0%, #fb7185 26%, #e11d48 65%, #9f1239 95%)',
+        rimLight: 'rgba(255, 228, 230, 0.75)',
+        ambientShadow: 'rgba(159, 18, 57, 0.4)',
+        knotColor: '#e11d48'
+      },
+      {
+        id: 'emerald',
+        name: 'Emerald Jade',
+        bodyGrad: 'radial-gradient(circle at 38% 30%, #6ee7b7 0%, #34d399 26%, #059669 65%, #064e3b 95%)',
+        rimLight: 'rgba(209, 250, 229, 0.75)',
+        ambientShadow: 'rgba(6, 78, 59, 0.4)',
+        knotColor: '#059669'
+      },
+      {
+        id: 'amber',
+        name: 'Solar Amber',
+        bodyGrad: 'radial-gradient(circle at 38% 30%, #fde68a 0%, #fbbf24 26%, #d97706 65%, #92400e 95%)',
+        rimLight: 'rgba(254, 243, 199, 0.75)',
+        ambientShadow: 'rgba(146, 64, 14, 0.4)',
+        knotColor: '#d97706'
+      },
+      {
+        id: 'violet',
+        name: 'Amethyst Violet',
+        bodyGrad: 'radial-gradient(circle at 38% 30%, #d8b4fe 0%, #c084fc 26%, #9333ea 65%, #581c87 95%)',
+        rimLight: 'rgba(243, 232, 255, 0.75)',
+        ambientShadow: 'rgba(88, 28, 135, 0.4)',
+        knotColor: '#9333ea'
+      },
+      {
+        id: 'coral',
+        name: 'Coral Sunset',
+        bodyGrad: 'radial-gradient(circle at 38% 30%, #fdba74 0%, #fb923c 26%, #ea580c 65%, #9a3412 95%)',
+        rimLight: 'rgba(255, 237, 213, 0.75)',
+        ambientShadow: 'rgba(154, 52, 18, 0.4)',
+        knotColor: '#ea580c'
+      },
+      {
+        id: 'indigo',
+        name: 'Cosmic Indigo',
+        bodyGrad: 'radial-gradient(circle at 38% 30%, #a5b4fc 0%, #818cf8 26%, #4f46e5 65%, #312e81 95%)',
+        rimLight: 'rgba(224, 231, 255, 0.75)',
+        ambientShadow: 'rgba(49, 46, 129, 0.4)',
+        knotColor: '#4f46e5'
+      }
     ];
 
     let selectedThemeIndex = 0;
@@ -432,7 +543,6 @@
     let mqttClient = null;
     let broadcastChannel = null;
 
-    // Check query params for Room
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('room')) {
       roomCode = urlParams.get('room').toUpperCase().trim();
@@ -467,7 +577,7 @@
     }
 
     /* ----------------------------------------------------
-       2. PROCEDURAL 60 FPS OPEN SKY CLOUD CANVAS
+       2. 60 FPS OPEN SKY PROCEDURAL DRIFTING CLOUDS
        ---------------------------------------------------- */
     const cloudCanvas = document.getElementById('cloudCanvas');
     const cloudCtx = cloudCanvas.getContext('2d');
@@ -481,19 +591,19 @@
 
     function initClouds() {
       clouds = [];
-      const cloudCount = Math.max(5, Math.floor(window.innerWidth / 280));
-      for (let i = 0; i < cloudCount; i++) {
+      const count = Math.max(5, Math.floor(window.innerWidth / 280));
+      for (let i = 0; i < count; i++) {
         clouds.push({
           x: Math.random() * window.innerWidth,
-          y: Math.random() * (window.innerHeight * 0.55),
-          baseRadius: 35 + Math.random() * 45,
+          y: Math.random() * (window.innerHeight * 0.5),
+          baseRadius: 36 + Math.random() * 45,
           speed: 0.12 + Math.random() * 0.22,
           puffs: [
-            { ox: -30, oy: 10, r: 0.7 },
-            { ox: 0, oy: -15, r: 1.1 },
-            { ox: 35, oy: 5, r: 0.8 },
-            { ox: -15, oy: -8, r: 0.9 },
-            { ox: 20, oy: -10, r: 0.95 }
+            { ox: -32, oy: 10, r: 0.72 },
+            { ox: 0, oy: -14, r: 1.15 },
+            { ox: 38, oy: 6, r: 0.8 },
+            { ox: -16, oy: -8, r: 0.9 },
+            { ox: 22, oy: -10, r: 0.95 }
           ]
         });
       }
@@ -501,43 +611,37 @@
 
     function renderClouds() {
       cloudCtx.clearRect(0, 0, cloudCanvas.width, cloudCanvas.height);
-
       clouds.forEach(c => {
         c.x += c.speed;
-        if (c.x - 180 > cloudCanvas.width) {
-          c.x = -180;
-          c.y = Math.random() * (cloudCanvas.height * 0.55);
+        if (c.x - 200 > cloudCanvas.width) {
+          c.x = -200;
+          c.y = Math.random() * (cloudCanvas.height * 0.5);
         }
-
-        // Draw soft alpha cumulus puffs
         c.puffs.forEach(p => {
           const px = c.x + p.ox;
           const py = c.y + p.oy;
           const pr = c.baseRadius * p.r;
-
-          const radGrad = cloudCtx.createRadialGradient(px, py - pr * 0.3, pr * 0.1, px, py, pr);
-          radGrad.addColorStop(0, 'rgba(255, 255, 255, 0.42)');
-          radGrad.addColorStop(0.7, 'rgba(255, 255, 255, 0.25)');
+          const radGrad = cloudCtx.createRadialGradient(px, py - pr * 0.25, pr * 0.1, px, py, pr);
+          radGrad.addColorStop(0, 'rgba(255, 255, 255, 0.45)');
+          radGrad.addColorStop(0.7, 'rgba(255, 255, 255, 0.22)');
           radGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-
           cloudCtx.fillStyle = radGrad;
           cloudCtx.beginPath();
           cloudCtx.arc(px, py, pr, 0, Math.PI * 2);
           cloudCtx.fill();
         });
       });
-
       requestAnimationFrame(renderClouds);
     }
 
     /* ----------------------------------------------------
-       3. SIGNATURE PAD CANVAS ENGINE
+       3. SIGNATURE PAD ENGINE (High-DPI Dual Stream)
        ---------------------------------------------------- */
     const pad = document.getElementById('padCanvas');
     const padCtx = pad.getContext('2d');
     let padStrokeWeight = 3.5;
     let padDrawing = false;
-    let strokes = []; // Array of { points: [{x, y}] }
+    let strokes = [];
     let activeStroke = null;
 
     function resizePad() {
@@ -561,9 +665,7 @@
         padCtx.lineWidth = stk.weight;
         padCtx.beginPath();
         padCtx.moveTo(stk.points[0].x, stk.points[0].y);
-        for (let i = 1; i < stk.points.length; i++) {
-          padCtx.lineTo(stk.points[i].x, stk.points[i].y);
-        }
+        for (let i = 1; i < stk.points.length; i++) padCtx.lineTo(stk.points[i].x, stk.points[i].y);
         padCtx.stroke();
       });
     }
@@ -621,14 +723,13 @@
       });
     }
 
-    // Export signature as dual-stream: transparent PNG & dark-on-white PNG
     function generateSignatureStreams() {
       if (strokes.length === 0) return null;
       const rect = pad.getBoundingClientRect();
       const w = Math.max(rect.width, 240);
       const h = Math.max(rect.height, 120);
 
-      // Stream 1: Balloon White Transparent Ink
+      // Stream 1: White Ink on Transparent PNG (for 3D balloon)
       const s1 = document.createElement('canvas');
       s1.width = w * 2;
       s1.height = h * 2;
@@ -646,7 +747,7 @@
         c1.stroke();
       });
 
-      // Stream 2: PDF Export Deep Dark Ink (#0f172a) on Pure White
+      // Stream 2: Deep Dark Ink (#0f172a) on Pure White (for PDF Export)
       const s2 = document.createElement('canvas');
       s2.width = w * 2;
       s2.height = h * 2;
@@ -659,7 +760,7 @@
       c2.lineJoin = 'round';
       strokes.forEach(stk => {
         if (stk.points.length < 2) return;
-        c2.lineWidth = stk.weight * 1.2;
+        c2.lineWidth = stk.weight * 1.25;
         c2.beginPath();
         c2.moveTo(stk.points[0].x, stk.points[0].y);
         for (let i = 1; i < stk.points.length; i++) c2.lineTo(stk.points[i].x, stk.points[i].y);
@@ -673,14 +774,14 @@
     }
 
     /* ----------------------------------------------------
-       4. THEME SELECTOR BUTTONS
+       4. THEME SELECTOR UI
        ---------------------------------------------------- */
-    const colorBox = document.getElementById('colorPickerContainer');
+    const colorPickerContainer = document.getElementById('colorPickerContainer');
     BALLOON_THEMES.forEach((thm, idx) => {
       const b = document.createElement('button');
       b.type = 'button';
       b.className = `w-full h-8 rounded-xl transition-transform border-2 ${idx === 0 ? 'border-white scale-110 shadow-md ring-2 ring-sky-500' : 'border-transparent hover:scale-105'}`;
-      b.style.background = thm.grad;
+      b.style.background = thm.bodyGrad;
       b.title = thm.name;
       b.onclick = () => {
         selectedThemeIndex = idx;
@@ -688,13 +789,13 @@
           btn.className = `w-full h-8 rounded-xl transition-transform border-2 ${i === idx ? 'border-white scale-110 shadow-md ring-2 ring-sky-500' : 'border-transparent hover:scale-105'}`;
         });
       };
-      colorBox.appendChild(b);
+      colorPickerContainer.appendChild(b);
     });
 
     /* ----------------------------------------------------
-       5. SYNTHESIZED WEB AUDIO POP (480Hz -> 70Hz)
+       5. SYNTHESIZED WEB AUDIO POP
        ---------------------------------------------------- */
-    function playLatexPop() {
+    function playAudioPop() {
       if (!soundEnabled) return;
       try {
         if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -705,19 +806,17 @@
 
         osc.type = 'triangle';
         osc.frequency.setValueAtTime(480, audioContext.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(70, audioContext.currentTime + 0.14);
+        osc.frequency.exponentialRampToValueAtTime(70, audioContext.currentTime + 0.13);
 
         gain.gain.setValueAtTime(0.65, audioContext.currentTime);
-        gain.gain.linearRampToValueAtTime(0.01, audioContext.currentTime + 0.14);
+        gain.gain.linearRampToValueAtTime(0.01, audioContext.currentTime + 0.13);
 
         osc.connect(gain);
         gain.connect(audioContext.destination);
 
         osc.start();
-        osc.stop(audioContext.currentTime + 0.15);
-      } catch (e) {
-        // Audio policy ignore
-      }
+        osc.stop(audioContext.currentTime + 0.14);
+      } catch (e) {}
     }
 
     function toggleAudio() {
@@ -740,7 +839,7 @@
     }
 
     /* ----------------------------------------------------
-       6. HELIUM BALLOON & 7-NODE VERLET ROPE PHYSICS
+       6. HELIUM BALLOON & 7-SEGMENT VERLET STRING PHYSICS
        ---------------------------------------------------- */
     const stage = document.getElementById('balloonStage');
     const stringCanvas = document.getElementById('stringCanvas');
@@ -762,10 +861,10 @@
         const stageW = window.innerWidth;
         const stageH = window.innerHeight;
 
-        this.x = Math.random() * (stageW - 300) + 150;
-        this.y = stageH + 200; // Launch from bottom
-        this.vx = (Math.random() - 0.5) * 1.5;
-        this.vy = -3.2 - Math.random() * 1.2;
+        this.x = Math.random() * (stageW - 320) + 160;
+        this.y = stageH + 240; // float in from bottom
+        this.vx = (Math.random() - 0.5) * 1.8;
+        this.vy = -3.2 - Math.random() * 1.4;
 
         this.squashX = 1.0;
         this.squashY = 1.0;
@@ -775,33 +874,36 @@
         this.dragStartY = 0;
         this.pointerDownPos = { x: 0, y: 0 };
 
-        // 7-Node Verlet Integration String (6 segments, 12px each)
-        this.segmentLength = 12;
+        // 7-Node Verlet Integration Dynamic String
+        this.segmentLength = 13;
         this.nodes = [];
         for (let i = 0; i < 7; i++) {
           this.nodes.push({
             x: this.x,
-            y: this.y + 90 + i * this.segmentLength,
+            y: this.y + 98 + i * this.segmentLength,
             oldX: this.x,
-            oldY: this.y + 90 + i * this.segmentLength
+            oldY: this.y + 98 + i * this.segmentLength
           });
         }
 
-        // Create DOM element
+        // Build 3D Latex Balloon DOM
         this.el = document.createElement('div');
-        this.el.className = 'balloon-unit';
+        this.el.className = 'balloon-wrapper';
         this.el.id = this.id;
 
         this.el.innerHTML = `
-          <div class="balloon-hull" style="background: ${theme.grad}; box-shadow: 0 24px 45px -10px rgba(0,0,0,0.35), 0 0 16px ${theme.rim} inset;">
-            <p class="font-extrabold text-white text-sm tracking-tight text-center truncate w-full drop-shadow">${data.name}</p>
-            ${data.org ? `<p class="text-[10px] text-white/85 font-medium truncate w-full text-center drop-shadow-sm mb-0.5">${data.org}</p>` : ''}
-            <div class="w-full h-14 flex items-center justify-center my-0.5 bg-white/10 rounded-xl backdrop-blur-sm px-1.5 shadow-inner">
-              <img src="${data.displayWhitePNG}" class="max-h-full max-w-full object-contain filter drop-shadow">
+          <div class="balloon-bulb" style="background: ${theme.bodyGrad}; box-shadow: 0 28px 45px -12px ${theme.ambientShadow}, 0 0 16px ${theme.rimLight} inset;">
+            <p class="font-extrabold text-white text-sm tracking-tight text-center truncate w-full drop-shadow-md">${data.name}</p>
+            ${data.org ? `<p class="text-[10px] text-white/90 font-medium truncate w-full text-center drop-shadow-sm">${data.org}</p>` : ''}
+            <div class="balloon-signature-box">
+              <img src="${data.displayWhitePNG}" class="balloon-signature-img" alt="signature">
             </div>
-            <span class="text-[9px] text-white/80 font-bold tracking-wider">${data.timestamp}</span>
+            <span class="text-[9px] text-white/80 font-bold tracking-wider mt-auto">${data.timestamp}</span>
           </div>
-          <div class="balloon-knot" style="background: ${theme.knot};"></div>
+          <div class="balloon-knot-container">
+            <div class="balloon-knot" style="background: ${theme.knotColor};"></div>
+            <div class="balloon-knot-skirt" style="background: ${theme.knotColor};"></div>
+          </div>
         `;
 
         this.bindEvents();
@@ -855,66 +957,66 @@
 
       updatePhysics(wind) {
         if (!this.isDragging) {
-          // Archimedes upward buoyancy vs aerodynamic drag
+          // Buoyancy vs Quadratic Air Drag
           const buoyancy = -0.16;
-          const cd = 0.008;
-          const dragY = cd * (this.vy * Math.abs(this.vy));
+          const dragCoeff = 0.0075;
+          const dragY = dragCoeff * (this.vy * Math.abs(this.vy));
           this.vy += buoyancy - dragY;
 
-          // Cap terminal ascent velocity between -3.5 and -5.0 px/frame
-          if (this.vy < -4.4) this.vy = -4.4;
+          // Terminal ascent velocity limit
+          if (this.vy < -4.2) this.vy = -4.2;
 
           this.vx += (wind - this.vx) * 0.035;
           this.x += this.vx;
           this.y += this.vy;
 
-          // Ceiling Soft-Spring Cushioned Boundary at y = 80px
+          // Soft-Spring Ceiling Cushion at y = 90px with squash-stretch
           const ceilingY = 90;
           if (this.y < ceilingY) {
             this.y = ceilingY;
-            this.vy = -this.vy * 0.38 + 0.3; // gentle spring bounce
+            this.vy = -this.vy * 0.38 + 0.3;
             this.squashX = 1.12;
             this.squashY = 0.88;
           }
 
-          // Wall boundary rebound
-          if (this.x < 90) { this.x = 90; this.vx *= -0.7; }
-          if (this.x > window.innerWidth - 90) { this.x = window.innerWidth - 90; this.vx *= -0.7; }
+          // Wall bounces
+          if (this.x < 95) { this.x = 95; this.vx *= -0.7; }
+          if (this.x > window.innerWidth - 95) { this.x = window.innerWidth - 95; this.vx *= -0.7; }
         }
 
-        // Restore squash and stretch
+        // Smoothly restore elasticity
         this.squashX += (1.0 - this.squashX) * 0.1;
         this.squashY += (1.0 - this.squashY) * 0.1;
 
-        // Aerodynamic pendulum tilt
+        // Dynamic roll angle from aerodynamic tilt
         this.tilt = (this.vx - wind) * 3.8;
 
-        // Update DOM transform
+        // Apply visual transform
         this.el.style.left = `${this.x}px`;
         this.el.style.top = `${this.y}px`;
-        const hull = this.el.querySelector('.balloon-hull');
-        if (hull) {
-          hull.style.transform = `rotate(${this.tilt}deg) scale(${this.squashX}, ${this.squashY})`;
+        const bulb = this.el.querySelector('.balloon-bulb');
+        if (bulb) {
+          bulb.style.transform = `rotate(${this.tilt}deg) scale(${this.squashX}, ${this.squashY})`;
         }
 
-        // Update 7-segment Verlet Rope attached to knot
-        const knotX = this.x;
-        const knotY = this.y + 92;
+        // Attach Verlet String to knot anchor
+        const knotAnchorX = this.x;
+        const knotAnchorY = this.y + 104;
 
-        this.nodes[0].x = knotX;
-        this.nodes[0].y = knotY;
+        this.nodes[0].x = knotAnchorX;
+        this.nodes[0].y = knotAnchorY;
 
         for (let i = 1; i < this.nodes.length; i++) {
           const n = this.nodes[i];
           const vx = (n.x - n.oldX) * 0.94 + (wind * 0.4);
-          const vy = (n.y - n.oldY) * 0.94 + 0.22; // subtle string gravity
+          const vy = (n.y - n.oldY) * 0.94 + 0.22;
           n.oldX = n.x;
           n.oldY = n.y;
           n.x += vx;
           n.y += vy;
         }
 
-        // Iterative distance constraints (3 passes)
+        // Solve 3 distance constraint iterations
         for (let pass = 0; pass < 3; pass++) {
           for (let i = 0; i < this.nodes.length - 1; i++) {
             const n1 = this.nodes[i];
@@ -939,8 +1041,8 @@
       drawRope(ctx) {
         if (this.nodes.length < 2) return;
         ctx.save();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
-        ctx.lineWidth = 1.6;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.lineWidth = 1.7;
         ctx.beginPath();
         ctx.moveTo(this.nodes[0].x, this.nodes[0].y);
         for (let i = 1; i < this.nodes.length - 1; i++) {
@@ -954,11 +1056,11 @@
       }
     }
 
-    // Global Physics Tick Loop
-    let globalWindTime = 0;
+    // Main 60 FPS Physics Loop
+    let windStep = 0;
     function physicsLoop() {
-      globalWindTime += 0.015;
-      const wind = Math.sin(globalWindTime) * 0.65 + Math.cos(globalWindTime * 0.3) * 0.3;
+      windStep += 0.015;
+      const wind = Math.sin(windStep) * 0.65 + Math.cos(windStep * 0.3) * 0.3;
 
       stringCtx.clearRect(0, 0, stringCanvas.width, stringCanvas.height);
 
@@ -982,9 +1084,9 @@
       if (idx === -1) return;
       const b = balloons[idx];
 
-      playLatexPop();
+      playAudioPop();
 
-      // Multi-color confetti burst
+      // Confetti burst
       const rx = b.x / window.innerWidth;
       const ry = b.y / window.innerHeight;
       confetti({
@@ -994,10 +1096,7 @@
         colors: ['#38bdf8', '#fb7185', '#34d399', '#fbbf24', '#c084fc', '#ffffff']
       });
 
-      // Quick CSS scale pop
-      b.el.style.transition = 'transform 0.15s ease-out, opacity 0.15s ease-out';
-      b.el.style.transform = `translate(-50%, -50%) scale(1.6)`;
-      b.el.style.opacity = '0';
+      b.el.classList.add('balloon-bursting');
 
       setTimeout(() => {
         if (b.el.parentElement) b.el.parentElement.removeChild(b.el);
@@ -1018,18 +1117,14 @@
     }
 
     /* ----------------------------------------------------
-       7. MULTI-DEVICE ZERO-BACKEND REAL-TIME SYNC
+       7. MULTI-DEVICE REAL-TIME SYNC
        ---------------------------------------------------- */
     function initSyncNetwork() {
-      // 1. Cross-tab instant sync via BroadcastChannel
       try {
         broadcastChannel = new BroadcastChannel(`guestbook_${roomCode}`);
         broadcastChannel.onmessage = (ev) => handleSyncPayload(ev.data);
-      } catch (e) {
-        // Fallback gracefully
-      }
+      } catch (e) {}
 
-      // 2. Public MQTT over Secure WebSockets (EMQX Public Broker)
       const clientId = 'guest_' + Math.random().toString(16).slice(2, 10);
       const topic = `exhibition/sky/${roomCode}/feed`;
 
@@ -1082,7 +1177,7 @@
       const streams = generateSignatureStreams();
 
       if (!streams) {
-        alert('Please draw your autograph before launching the balloon!');
+        alert('Please draw your signature before launching!');
         return;
       }
 
@@ -1098,12 +1193,11 @@
         date: now.toLocaleDateString()
       };
 
-      // Broadcast and save
       recordInLedger(entryData);
       addBalloon(entryData);
       broadcastMessage({ action: 'NEW_BALLOON', data: entryData });
 
-      // 3-Second Auto-Reset Timer UI
+      // 3-Second Reset Loop
       const notice = document.getElementById('kioskSuccessNotice');
       const counterSpan = document.getElementById('resetSeconds');
       const submitBtn = document.getElementById('btnSubmitForm');
@@ -1143,8 +1237,7 @@
       const pageHeight = doc.internal.pageSize.getHeight();
 
       function drawBanner(pageNum, totalPages) {
-        // Formal Header Banner
-        doc.setFillColor(15, 23, 42); // deep slate #0f172a
+        doc.setFillColor(15, 23, 42);
         doc.rect(0, 0, pageWidth, 36, 'F');
 
         doc.setTextColor(255, 255, 255);
@@ -1169,25 +1262,21 @@
         const isCol2 = i % 2 !== 0;
         const currentX = isCol2 ? margin + colWidth + colGap : margin;
 
-        // Two-column Clean Bordered Card
         doc.setFillColor(255, 255, 255);
         doc.setDrawColor(226, 232, 240);
         doc.roundedRect(currentX, currentY, colWidth, cardHeight, 3, 3, 'FD');
 
-        // Attendee Name
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(11);
         doc.setTextColor(15, 23, 42);
         doc.text(doc.splitTextToSize(item.name, colWidth - 8)[0], currentX + 5, currentY + 8);
 
-        // Subtitle & Exact Timestamp
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(8);
         doc.setTextColor(100, 116, 139);
         const sub = `${item.org ? item.org + ' • ' : ''}${item.date || ''} ${item.timestamp || ''}`;
         doc.text(doc.splitTextToSize(sub, colWidth - 8)[0], currentX + 5, currentY + 13);
 
-        // Vector/High-contrast Dark Ink Signature Graphic
         if (item.pdfDarkPNG) {
           doc.addImage(item.pdfDarkPNG, 'PNG', currentX + 5, currentY + 15, colWidth - 10, 18);
         }
@@ -1201,12 +1290,10 @@
         }
       }
 
-      // Dynamic Page Numbering in Footers
       const totalPages = doc.internal.getNumberOfPages();
       for (let p = 1; p <= totalPages; p++) {
         doc.setPage(p);
         drawBanner(p, totalPages);
-
         doc.setFontSize(8);
         doc.setTextColor(148, 163, 184);
         doc.text(`Official Exhibition Registry Archive  —  Page ${p} of ${totalPages}`, margin, pageHeight - 8);
@@ -1224,7 +1311,7 @@
     }
 
     /* ----------------------------------------------------
-       10. VIEW SWITCHING & QR CODE MODAL
+       10. SCREEN SWITCHING & ADMIN CONTROLS
        ---------------------------------------------------- */
     function switchMode(m) {
       currentMode = m;
@@ -1291,14 +1378,14 @@
       }
     }
 
-    // Live Clock on Display Wall
+    // Live Exhibition Clock
     setInterval(() => {
       const clock = document.getElementById('wallLiveClock');
       if (clock) clock.innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     }, 1000);
 
     /* ----------------------------------------------------
-       11. INITIALIZATION
+       11. LIFECYCLE INITIALIZATION
        ---------------------------------------------------- */
     window.addEventListener('load', () => {
       lucide.createIcons();
@@ -1309,9 +1396,9 @@
       initSyncNetwork();
       refreshStatsCounters();
 
-      // Populate existing stored balloons into the sky
+      // Populate recent signatures into floating sky
       const history = getLedger();
-      history.slice(-18).forEach(entry => addBalloon(entry));
+      history.slice(-14).forEach(entry => addBalloon(entry));
 
       requestAnimationFrame(physicsLoop);
 
