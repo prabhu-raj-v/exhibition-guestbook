@@ -21,6 +21,9 @@
   <!-- QRCode.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
+  <!-- MQTT.js for Zero-Config Realtime Cloud Sync over Public Secure WebSocket -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.5.0/mqtt.min.js"></script>
+
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -154,7 +157,7 @@
         <!-- Cloud status -->
         <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-400">
           <span class="w-2 h-2 rounded-full bg-emerald-400" id="cloudStatusDot"></span>
-          <span id="cloudStatusText">Live Cloud</span>
+          <span id="cloudStatusText">Connecting Cloud...</span>
         </div>
 
         <!-- Go to Big Display View (requires PIN) -->
@@ -217,9 +220,12 @@
               <div id="balloonColorGrid" class="grid grid-cols-6 gap-2"></div>
             </div>
 
-            <div class="p-3 bg-slate-950/60 rounded-2xl border border-slate-800 text-xs text-slate-400 flex items-center gap-2.5">
-              <i class="fa-solid fa-infinity text-cyan-400 text-sm"></i>
-              <span>No timer! Your balloon will remain floating in the room display.</span>
+            <div class="p-3 bg-slate-950/60 rounded-2xl border border-slate-800 text-xs text-slate-400 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i class="fa-solid fa-cloud-bolt text-cyan-400 text-sm"></i>
+                <span>Zero-setup global cloud sync enabled</span>
+              </div>
+              <span id="kioskConnectionBadge" class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Online</span>
             </div>
           </div>
 
@@ -498,18 +504,7 @@
     <div id="balloonStage" class="relative w-full h-full z-10 overflow-hidden pointer-events-auto"></div>
   </section>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { 
-      getFirestore, 
-      collection, 
-      doc, 
-      setDoc, 
-      updateDoc, 
-      onSnapshot 
-    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
+  <script>
     // Palette Configurations
     const PALETTES = [
       { id: 'cyan', name: 'Electric Cyan', bg: 'linear-gradient(135deg, #06b6d4, #0369a1)', border: '#38bdf8', glow: 'rgba(6, 182, 212, 0.45)' },
@@ -522,10 +517,6 @@
 
     let currentSelectedPalette = PALETTES[0];
     let isSoundMuted = false;
-    let authUser = null;
-    let db = null;
-    let balloonsCollectionRef = null;
-    let unsubscribeBalloonsListener = null;
 
     // Room Code & PIN Protection Settings
     let currentRoomCode = 'EXPO-2026';
@@ -537,9 +528,17 @@
     let balloonInstancesMap = new Map();
     let totalSignaturesCount = 0;
 
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'exhibition-guestbook-app';
-    const rawFirebaseConfig = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
-    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+    // Client Identification & Local Storage
+    const clientId = 'guestbook_' + Math.random().toString(36).substring(2, 10);
+    const STORAGE_KEY_PREFIX = 'exhibit_balloons_v2_';
+
+    // MQTT Brokers with auto-fallback (Zero config, works out of the box anywhere)
+    const MQTT_BROKERS = [
+      'wss://broker.emqx.io:8084/mqtt',
+      'wss://broker.hivemq.com:8884/mqtt'
+    ];
+    let currentBrokerIndex = 0;
+    let mqttClient = null;
 
     /* Web Audio Sound Synthesizer */
     class AudioEngine {
@@ -596,11 +595,13 @@
     }
     const audioSynth = new AudioEngine();
 
-    /* Signature Drawing Canvas */
+    /* Signature Drawing Canvas & Vector Path Capture */
     let sigCanvas, sigCtx;
     let isDrawing = false;
     let hasDrawnOnPad = false;
     let currentStrokeWidth = 4;
+    let signatureStrokes = []; // Stores vector lines for ultra-lightweight SVG transmission
+    let currentPath = [];
     const strokeColor = '#ffffff';
 
     function initSignaturePad() {
@@ -614,8 +615,8 @@
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         return {
-          x: clientX - rect.left,
-          y: clientY - rect.top
+          x: Math.round(clientX - rect.left),
+          y: Math.round(clientY - rect.top)
         };
       };
 
@@ -624,6 +625,7 @@
         audioSynth.init();
         isDrawing = true;
         const pos = getPointerPos(e);
+        currentPath = [{ x: pos.x, y: pos.y }];
         sigCtx.beginPath();
         sigCtx.moveTo(pos.x, pos.y);
         sigCtx.lineCap = 'round';
@@ -636,6 +638,7 @@
         if (!isDrawing) return;
         e.preventDefault();
         const pos = getPointerPos(e);
+        currentPath.push({ x: pos.x, y: pos.y });
         sigCtx.lineTo(pos.x, pos.y);
         sigCtx.stroke();
         hasDrawnOnPad = true;
@@ -645,6 +648,13 @@
         if (!isDrawing) return;
         e.preventDefault();
         isDrawing = false;
+        if (currentPath.length > 0) {
+          signatureStrokes.push({
+            width: currentStrokeWidth,
+            points: currentPath
+          });
+          currentPath = [];
+        }
       };
 
       sigCanvas.addEventListener('mousedown', startDrawing);
@@ -663,7 +673,29 @@
       sigCanvas.width = rect.width * dpr;
       sigCanvas.height = rect.height * dpr;
       sigCtx.scale(dpr, dpr);
-      clearSignatureCanvas();
+      redrawAllStrokes();
+    }
+
+    function redrawAllStrokes() {
+      if (!sigCanvas || !sigCtx) return;
+      sigCtx.save();
+      sigCtx.setTransform(1, 0, 0, 1, 0, 0);
+      sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+      sigCtx.restore();
+
+      signatureStrokes.forEach(stroke => {
+        if (!stroke.points || stroke.points.length === 0) return;
+        sigCtx.beginPath();
+        sigCtx.lineWidth = stroke.width || 4;
+        sigCtx.strokeStyle = strokeColor;
+        sigCtx.lineCap = 'round';
+        sigCtx.lineJoin = 'round';
+        sigCtx.moveTo(stroke.points[0].x, stroke.points[0].y);
+        for (let i = 1; i < stroke.points.length; i++) {
+          sigCtx.lineTo(stroke.points[i].x, stroke.points[i].y);
+        }
+        sigCtx.stroke();
+      });
     }
 
     window.clearSignatureCanvas = function() {
@@ -672,6 +704,8 @@
       sigCtx.setTransform(1, 0, 0, 1, 0, 0);
       sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
       sigCtx.restore();
+      signatureStrokes = [];
+      currentPath = [];
       hasDrawnOnPad = false;
     };
 
@@ -684,6 +718,53 @@
         btnElement.className = 'stroke-btn px-2 py-0.5 rounded text-[11px] font-bold text-cyan-400 bg-slate-800 transition';
       }
     };
+
+    // Compact SVG generator: ensures signature is tiny (<2KB) and transmits instantly over any network
+    function generateCleanSignatureSVG() {
+      if (!signatureStrokes || signatureStrokes.length === 0) return null;
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      signatureStrokes.forEach(s => {
+        s.points.forEach(p => {
+          if (p.x < minX) minX = p.x;
+          if (p.y < minY) minY = p.y;
+          if (p.x > maxX) maxX = p.x;
+          if (p.y > maxY) maxY = p.y;
+        });
+      });
+      const padding = 15;
+      minX = Math.max(0, minX - padding);
+      minY = Math.max(0, minY - padding);
+      maxX = maxX + padding;
+      maxY = maxY + padding;
+      const width = Math.max(60, maxX - minX);
+      const height = Math.max(40, maxY - minY);
+
+      let pathsSvg = '';
+      signatureStrokes.forEach(s => {
+        if (!s.points || s.points.length === 0) return;
+        let d = `M ${(s.points[0].x - minX).toFixed(1)} ${(s.points[0].y - minY).toFixed(1)}`;
+        for (let i = 1; i < s.points.length; i++) {
+          d += ` L ${(s.points[i].x - minX).toFixed(1)} ${(s.points[i].y - minY).toFixed(1)}`;
+        }
+        pathsSvg += `<path d="${d}" fill="none" stroke="#ffffff" stroke-width="${s.width || 4}" stroke-linecap="round" stroke-linejoin="round"/>`;
+      });
+
+      const rawSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width.toFixed(1)} ${height.toFixed(1)}">${pathsSvg}</svg>`;
+      return 'data:image/svg+xml;utf8,' + encodeURIComponent(rawSvg);
+    }
+
+    function generateCursiveFallbackSignature(name) {
+      const offCanvas = document.createElement('canvas');
+      offCanvas.width = 440;
+      offCanvas.height = 140;
+      const ctx = offCanvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'italic 52px "Space Grotesk", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(name, 220, 70);
+      return offCanvas.toDataURL('image/png');
+    }
 
     function renderColorPalettePicker() {
       const container = document.getElementById('balloonColorGrid');
@@ -709,170 +790,214 @@
       });
     }
 
-    /* Firebase & Room Synchronization */
-    async function initCloudSync() {
-      const statusDot = document.getElementById('cloudStatusDot');
-      const statusText = document.getElementById('cloudStatusText');
+    /* Zero-Configuration Cloud Realtime Sync Engine (MQTT over Secure WebSocket) */
+    function getRoomTopic(roomCode) {
+      const sanitized = (roomCode || 'EXPO-2026').trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '_');
+      return `exhibition_guestbook_v2/room/${sanitized}`;
+    }
 
-      if (!rawFirebaseConfig) {
-        if (statusText) statusText.textContent = 'Local Mode';
-        if (statusDot) statusDot.className = 'w-2 h-2 rounded-full bg-cyan-400';
-        setupLocalStoreFallback();
+    function loadLocalRoomStorage() {
+      const key = STORAGE_KEY_PREFIX + currentRoomCode.toUpperCase();
+      try {
+        const saved = localStorage.getItem(key);
+        if (saved) {
+          const list = JSON.parse(saved);
+          const map = new Map();
+          list.forEach(item => {
+            if (!item.popped) map.set(item.id, item);
+          });
+          return map;
+        }
+      } catch (e) {}
+      return new Map();
+    }
+
+    function saveLocalRoomStorage(map) {
+      const key = STORAGE_KEY_PREFIX + currentRoomCode.toUpperCase();
+      try {
+        const array = Array.from(map.values());
+        localStorage.setItem(key, JSON.stringify(array));
+      } catch (e) {}
+    }
+
+    function setCloudStatusUI(status, message) {
+      const dot = document.getElementById('cloudStatusDot');
+      const text = document.getElementById('cloudStatusText');
+      const badge = document.getElementById('kioskConnectionBadge');
+
+      if (text) text.textContent = message;
+      if (dot) {
+        if (status === 'connected') dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+        else if (status === 'connecting') dot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
+        else dot.className = 'w-2 h-2 rounded-full bg-rose-500';
+      }
+      if (badge) {
+        if (status === 'connected') {
+          badge.className = 'text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+          badge.textContent = 'Cloud Connected';
+        } else if (status === 'connecting') {
+          badge.className = 'text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30';
+          badge.textContent = 'Reconnecting...';
+        } else {
+          badge.className = 'text-[10px] font-mono px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30';
+          badge.textContent = 'Offline (Local)';
+        }
+      }
+    }
+
+    function initCloudRealtime() {
+      if (typeof mqtt === 'undefined') {
+        console.warn('MQTT.js not loaded, running in local mode');
+        setCloudStatusUI('offline', 'Local Standalone');
         return;
       }
 
-      try {
-        const firebaseConfig = JSON.parse(rawFirebaseConfig);
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        db = getFirestore(app);
+      setCloudStatusUI('connecting', 'Connecting Cloud...');
+      const brokerUrl = MQTT_BROKERS[currentBrokerIndex];
 
-        if (initialAuthToken) {
-          await signInWithCustomToken(auth, initialAuthToken);
-        } else {
-          await signInAnonymously(auth);
+      try {
+        if (mqttClient) {
+          try { mqttClient.end(true); } catch (e) {}
         }
 
-        authUser = auth.currentUser;
-        if (!authUser) throw new Error('Auth failed');
+        mqttClient = mqtt.connect(brokerUrl, {
+          clientId: clientId,
+          clean: true,
+          connectTimeout: 7000,
+          reconnectPeriod: 3000,
+          keepalive: 45
+        });
 
-        if (statusText) statusText.textContent = 'Cloud Connected';
-        if (statusDot) statusDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+        mqttClient.on('connect', () => {
+          setCloudStatusUI('connected', 'Cloud Connected');
+          const topic = getRoomTopic(currentRoomCode);
+          mqttClient.subscribe(topic, { qos: 1 });
 
-        // Public collection path adhering to Rule 1
-        balloonsCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'balloons');
+          // Request sync state from any active Big Display
+          broadcastCloudMessage({
+            type: 'REQUEST_ROOM_SYNC',
+            sender: clientId,
+            roomCode: currentRoomCode
+          });
+        });
 
-        bindRoomListener();
+        mqttClient.on('message', (topic, payload) => {
+          try {
+            const msg = JSON.parse(payload.toString());
+            handleIncomingRealtimeMessage(msg);
+          } catch (err) {
+            console.error('MQTT message parse error:', err);
+          }
+        });
+
+        mqttClient.on('error', (err) => {
+          console.warn('MQTT error on', brokerUrl, err);
+          setCloudStatusUI('offline', 'Switching Server...');
+          switchToFallbackBroker();
+        });
+
+        mqttClient.on('offline', () => {
+          setCloudStatusUI('connecting', 'Reconnecting...');
+        });
 
       } catch (err) {
-        console.warn("Falling back to local storage:", err);
-        if (statusText) statusText.textContent = 'Local Standalone';
-        setupLocalStoreFallback();
+        console.error('Init MQTT error:', err);
+        switchToFallbackBroker();
       }
     }
 
-    function bindRoomListener() {
-      if (!db || !balloonsCollectionRef) return;
-      if (unsubscribeBalloonsListener) {
-        unsubscribeBalloonsListener();
+    function switchToFallbackBroker() {
+      currentBrokerIndex = (currentBrokerIndex + 1) % MQTT_BROKERS.length;
+      setTimeout(initCloudRealtime, 2000);
+    }
+
+    function broadcastCloudMessage(messageObj) {
+      if (!messageObj) return;
+      messageObj.timestamp = Date.now();
+      messageObj.roomCode = currentRoomCode.toUpperCase();
+
+      // Inter-tab / local window sync via BroadcastChannel
+      if (window.broadcastChan) {
+        try { window.broadcastChan.postMessage(messageObj); } catch (e) {}
       }
 
-      // Rule 2: No complex queries. Simple collection listener, filter room in JS memory.
-      unsubscribeBalloonsListener = onSnapshot(balloonsCollectionRef, (snapshot) => {
-        const filteredMap = new Map();
-        let roomTotal = 0;
-
-        snapshot.forEach(docSnap => {
-          const data = docSnap.data();
-          const id = docSnap.id;
-          
-          // Match room code in memory
-          const bRoom = (data.roomCode || 'EXPO-2026').toUpperCase();
-          if (bRoom === currentRoomCode.toUpperCase()) {
-            roomTotal++;
-            if (!data.popped) {
-              filteredMap.set(id, { id, ...data });
-            }
-          }
+      // Global sync across all devices via MQTT
+      if (mqttClient && mqttClient.connected) {
+        const topic = getRoomTopic(currentRoomCode);
+        mqttClient.publish(topic, JSON.stringify(messageObj), { qos: 1 }, (err) => {
+          if (err) console.error('Cloud publish error:', err);
         });
-
-        handleBalloonsStateUpdate(filteredMap, roomTotal);
-      }, (error) => {
-        console.error("Firestore onSnapshot error:", error);
-      });
+      }
     }
 
-    function setupLocalStoreFallback() {
-      const STORAGE_KEY = 'exhibition_secure_balloons_store';
-      const readLocal = () => {
-        try {
-          const raw = localStorage.getItem(STORAGE_KEY);
-          return raw ? JSON.parse(raw) : [];
-        } catch (e) {
-          return [];
+    // Process real-time messages from any device
+    function handleIncomingRealtimeMessage(msg) {
+      if (!msg || msg.roomCode !== currentRoomCode.toUpperCase()) return;
+
+      if (msg.type === 'NEW_BALLOON' && msg.balloon) {
+        const balloon = msg.balloon;
+        activeBalloonsMap.set(balloon.id, balloon);
+        totalSignaturesCount = Math.max(totalSignaturesCount, activeBalloonsMap.size);
+        saveLocalRoomStorage(activeBalloonsMap);
+        updateCountersHUD();
+
+        if (isCurrentViewDisplay()) {
+          spawnBalloonOnStage(balloon, true);
         }
-      };
+      }
 
-      const sync = () => {
-        const list = readLocal();
-        const map = new Map();
-        let roomTotal = 0;
-        list.forEach(b => {
-          const bRoom = (b.roomCode || 'EXPO-2026').toUpperCase();
-          if (bRoom === currentRoomCode.toUpperCase()) {
-            roomTotal++;
-            if (!b.popped) map.set(b.id, b);
-          }
-        });
-        handleBalloonsStateUpdate(map, roomTotal);
-      };
+      else if (msg.type === 'POP_BALLOON' && msg.balloonId) {
+        triggerLocalBalloonBurst(msg.balloonId);
+        activeBalloonsMap.delete(msg.balloonId);
+        saveLocalRoomStorage(activeBalloonsMap);
+        updateCountersHUD();
+      }
 
-      window.addEventListener('storage', sync);
-      sync();
+      else if (msg.type === 'POP_ALL') {
+        const ids = Array.from(balloonInstancesMap.keys());
+        ids.forEach(id => triggerLocalBalloonBurst(id));
+        activeBalloonsMap.clear();
+        saveLocalRoomStorage(activeBalloonsMap);
+        updateCountersHUD();
+      }
 
-      window.localStoreFallback = {
-        add: (item) => {
-          const list = readLocal();
-          list.push(item);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-          sync();
-        },
-        pop: (id) => {
-          const list = readLocal();
-          const target = list.find(b => b.id === id);
-          if (target) target.popped = true;
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-          sync();
-        },
-        clearAll: () => {
-          const list = readLocal().map(b => {
-            if ((b.roomCode || 'EXPO-2026').toUpperCase() === currentRoomCode.toUpperCase()) {
-              return { ...b, popped: true };
-            }
-            return b;
+      else if (msg.type === 'REQUEST_ROOM_SYNC' && msg.sender !== clientId) {
+        // If this device is the Big Display, share state to newly arrived laptop/phone
+        if (isCurrentViewDisplay() && activeBalloonsMap.size > 0) {
+          broadcastCloudMessage({
+            type: 'ROOM_SYNC_STATE',
+            balloons: Array.from(activeBalloonsMap.values()),
+            totalCount: totalSignaturesCount,
+            targetClient: msg.sender
           });
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-          sync();
         }
-      };
+      }
+
+      else if (msg.type === 'ROOM_SYNC_STATE') {
+        if (msg.targetClient && msg.targetClient !== clientId) return;
+        if (Array.isArray(msg.balloons)) {
+          msg.balloons.forEach(b => {
+            if (!activeBalloonsMap.has(b.id)) {
+              activeBalloonsMap.set(b.id, b);
+              if (isCurrentViewDisplay()) {
+                spawnBalloonOnStage(b, false);
+              }
+            }
+          });
+          if (msg.totalCount) totalSignaturesCount = Math.max(totalSignaturesCount, msg.totalCount);
+          saveLocalRoomStorage(activeBalloonsMap);
+          updateCountersHUD();
+        }
+      }
     }
 
-    function handleBalloonsStateUpdate(newActiveMap, totalWelcomed) {
-      activeBalloonsMap = newActiveMap;
-      totalSignaturesCount = Math.max(totalSignaturesCount, totalWelcomed || activeBalloonsMap.size);
-      updateCountersHUD();
+    // Inter-tab BroadcastChannel fallback
+    try {
+      window.broadcastChan = new BroadcastChannel('exhibit_guestbook_channel');
+      window.broadcastChan.onmessage = (ev) => handleIncomingRealtimeMessage(ev.data);
+    } catch (e) {}
 
-      if (!isCurrentViewDisplay()) return;
-
-      // Remote popped balloons
-      balloonInstancesMap.forEach((instance, id) => {
-        if (!activeBalloonsMap.has(id)) {
-          triggerLocalBalloonBurst(id);
-        }
-      });
-
-      // Newly added balloons
-      activeBalloonsMap.forEach((balloonData, id) => {
-        if (!balloonInstancesMap.has(id)) {
-          spawnBalloonOnStage(balloonData, true);
-        }
-      });
-    }
-
-    function generateCursiveFallbackSignature(name) {
-      const offCanvas = document.createElement('canvas');
-      offCanvas.width = 440;
-      offCanvas.height = 140;
-      const ctx = offCanvas.getContext('2d');
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'italic 52px "Space Grotesk", sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(name, 220, 70);
-      return offCanvas.toDataURL('image/png');
-    }
-
-    window.handleFormSubmission = async function(e) {
+    window.handleFormSubmission = function(e) {
       e.preventDefault();
       audioSynth.init();
 
@@ -883,10 +1008,9 @@
 
       if (!name) return;
 
-      let signatureDataUrl = '';
-      if (hasDrawnOnPad) {
-        signatureDataUrl = sigCanvas.toDataURL('image/png');
-      } else {
+      // Extract ultra-crisp vector SVG signature
+      let signatureDataUrl = generateCleanSignatureSVG();
+      if (!signatureDataUrl) {
         signatureDataUrl = generateCursiveFallbackSignature(name);
       }
 
@@ -902,16 +1026,18 @@
         popped: false
       };
 
-      try {
-        if (db && balloonsCollectionRef) {
-          const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'balloons', balloonId);
-          await setDoc(docRef, balloonPayload);
-        } else if (window.localStoreFallback) {
-          window.localStoreFallback.add(balloonPayload);
-        }
-      } catch (err) {
-        console.error("Error saving balloon:", err);
-      }
+      // Save locally
+      activeBalloonsMap.set(balloonId, balloonPayload);
+      totalSignaturesCount++;
+      saveLocalRoomStorage(activeBalloonsMap);
+      updateCountersHUD();
+
+      // Transmit to all other laptops and Big Display worldwide instantly
+      broadcastCloudMessage({
+        type: 'NEW_BALLOON',
+        balloon: balloonPayload,
+        sender: clientId
+      });
 
       audioSynth.playLaunch();
       showKioskSuccessCard(name);
@@ -1088,20 +1214,17 @@
       stage.appendChild(entity.dom);
     }
 
-    async function popBalloonAction(balloonId) {
+    window.popBalloonAction = function(balloonId) {
       triggerLocalBalloonBurst(balloonId);
+      activeBalloonsMap.delete(balloonId);
+      saveLocalRoomStorage(activeBalloonsMap);
 
-      try {
-        if (db && balloonsCollectionRef) {
-          const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'balloons', balloonId);
-          await updateDoc(docRef, { popped: true });
-        } else if (window.localStoreFallback) {
-          window.localStoreFallback.pop(balloonId);
-        }
-      } catch (err) {
-        console.error("Error popping balloon in cloud:", err);
-      }
-    }
+      broadcastCloudMessage({
+        type: 'POP_BALLOON',
+        balloonId: balloonId,
+        sender: clientId
+      });
+    };
 
     function triggerLocalBalloonBurst(balloonId) {
       const entity = balloonInstancesMap.get(balloonId);
@@ -1206,7 +1329,6 @@
     function setRoomCode(newRoom) {
       currentRoomCode = newRoom;
       
-      // Update UI labels
       const kioskRoomLabel = document.getElementById('kioskRoomLabel');
       const footerRoomLabel = document.getElementById('footerRoomLabel');
       const btnRoomText = document.getElementById('btnRoomText');
@@ -1219,20 +1341,31 @@
       if (displayRoomBadge) displayRoomBadge.textContent = `Room: ${currentRoomCode}`;
       if (qrRoomCodeLabel) qrRoomCodeLabel.textContent = currentRoomCode;
 
-      // Clear existing stage balloons for previous room
       balloonInstancesMap.forEach(entity => {
         if (entity.dom && entity.dom.parentNode) entity.dom.parentNode.removeChild(entity.dom);
       });
       balloonInstancesMap.clear();
-      activeBalloonsMap.clear();
 
-      // Refresh URL hash query
+      // Load balloons for newly selected room
+      activeBalloonsMap = loadLocalRoomStorage();
+      totalSignaturesCount = activeBalloonsMap.size;
+      updateCountersHUD();
+
+      // Update URL query string
       const url = new URL(window.location.href);
       url.searchParams.set('room', currentRoomCode);
       window.history.replaceState({}, '', url.toString());
 
-      // Re-bind listener for new room
-      bindRoomListener();
+      // Re-subscribe MQTT topic
+      if (mqttClient && mqttClient.connected) {
+        const topic = getRoomTopic(currentRoomCode);
+        mqttClient.subscribe(topic, { qos: 1 });
+        broadcastCloudMessage({
+          type: 'REQUEST_ROOM_SYNC',
+          sender: clientId,
+          roomCode: currentRoomCode
+        });
+      }
     }
 
     /* Cosmic Background Particle Canvas */
@@ -1373,7 +1506,6 @@
       if (!container) return;
       container.innerHTML = '';
 
-      // Direct link to the submission kiosk locked to this room
       const kioskUrl = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(currentRoomCode)}#laptop`;
       if (label) label.textContent = kioskUrl;
 
@@ -1387,11 +1519,11 @@
       });
     }
 
-    window.spawnSampleGuest = async function() {
+    window.spawnSampleGuest = function() {
       const sampleNames = ['Dr. Elena Vance', 'Kenji Takahashi', 'Amina Al-Mansoor', 'Marcus Zhao', 'Liam O\'Connor'];
       const sampleNotes = ['Quantum Labs • Tokyo', 'VR Research Fellow', 'Loved the Design Show', 'Robotics Architect', 'Visitor #108'];
       const randName = sampleNames[Math.floor(Math.random() * sampleNames.length)];
-      const randNote = sampleNotes[Math.floor(Math.random() * sampleNames.length)];
+      const randNote = sampleNotes[Math.floor(Math.random() * sampleNotes.length)];
       const randPalette = PALETTES[Math.floor(Math.random() * PALETTES.length)];
 
       const sampleBalloon = {
@@ -1405,27 +1537,35 @@
         popped: false
       };
 
-      try {
-        if (db && balloonsCollectionRef) {
-          const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'balloons', sampleBalloon.id);
-          await setDoc(docRef, sampleBalloon);
-        } else if (window.localStoreFallback) {
-          window.localStoreFallback.add(sampleBalloon);
-        }
-      } catch (e) {
-        console.error(e);
-      }
+      activeBalloonsMap.set(sampleBalloon.id, sampleBalloon);
+      totalSignaturesCount++;
+      saveLocalRoomStorage(activeBalloonsMap);
+      updateCountersHUD();
+
+      broadcastCloudMessage({
+        type: 'NEW_BALLOON',
+        balloon: sampleBalloon,
+        sender: clientId
+      });
+
       audioSynth.playLaunch();
     };
 
-    window.requestPopAllBalloons = async function() {
-      if (balloonInstancesMap.size === 0) return;
+    window.requestPopAllBalloons = function() {
+      if (balloonInstancesMap.size === 0 && activeBalloonsMap.size === 0) return;
       toggleAdminPanel();
 
-      const idsToPop = Array.from(activeBalloonsMap.keys());
-      for (const id of idsToPop) {
-        await popBalloonAction(id);
-      }
+      const idsToPop = Array.from(balloonInstancesMap.keys());
+      idsToPop.forEach(id => triggerLocalBalloonBurst(id));
+
+      activeBalloonsMap.clear();
+      saveLocalRoomStorage(activeBalloonsMap);
+      updateCountersHUD();
+
+      broadcastCloudMessage({
+        type: 'POP_ALL',
+        sender: clientId
+      });
     };
 
     function updateCountersHUD() {
@@ -1450,8 +1590,7 @@
       return str.replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[m]);
     }
 
-    window.addEventListener('load', async () => {
-      // Check query parameter for room code: ?room=ROOM_CODE
+    window.addEventListener('load', () => {
       const urlParams = new URLSearchParams(window.location.search);
       const urlRoom = urlParams.get('room');
       if (urlRoom && urlRoom.trim()) {
@@ -1465,9 +1604,9 @@
       startPhysicsLoop();
       updateWallClock();
 
-      await initCloudSync();
+      // Launch zero-configuration cloud realtime synchronization
+      initCloudRealtime();
 
-      // If user directly navigates to #display, prompt for PIN first
       if (window.location.hash.toLowerCase().includes('display')) {
         openDisplayWithAuth();
       } else {
