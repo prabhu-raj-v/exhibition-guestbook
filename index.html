@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Exhibition Public Guestbook • Cloud Wall</title>
+  <title>Exhibition Guestbook • Secure Event Wall</title>
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -18,7 +18,7 @@
   <!-- Canvas Confetti -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 
-  <!-- QRCode.js for phone scanning kiosk URL -->
+  <!-- QRCode.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
   <script>
@@ -68,7 +68,7 @@
       background: radial-gradient(circle at 50% 20%, #1e1b4b 0%, #0f172a 45%, #030712 100%);
     }
 
-    /* 3D Balloon shape */
+    /* 3D Balloon styling */
     .balloon-body {
       border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
       position: relative;
@@ -110,11 +110,10 @@
       transform-origin: top center;
     }
 
-    /* Modal Glass */
     .glass-panel {
-      background: rgba(15, 23, 42, 0.85);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
       border: 1px solid rgba(255, 255, 255, 0.12);
     }
   </style>
@@ -122,13 +121,13 @@
 <body class="h-screen w-screen overflow-hidden text-slate-100 font-sans antialiased">
 
   <!-- ========================================================================= -->
-  <!-- SCREEN 1: LAPTOP / MOBILE VISITOR KIOSK (Public Input Terminal)          -->
+  <!-- SCREEN 1: LAPTOP & VISITOR KIOSK (Public Input Mode)                     -->
   <!-- ========================================================================= -->
   <section id="laptopKioskScreen" class="relative w-full h-full flex flex-col justify-between overflow-y-auto bg-slate-950 p-4 sm:p-6 lg:p-8">
     <div class="fixed top-[-10%] right-[-5%] w-[420px] h-[420px] bg-cyan-600/10 rounded-full blur-[120px] pointer-events-none"></div>
     <div class="fixed bottom-[-10%] left-[-5%] w-[420px] h-[420px] bg-purple-600/10 rounded-full blur-[120px] pointer-events-none"></div>
 
-    <!-- Header -->
+    <!-- Top Header -->
     <header class="w-full max-w-5xl mx-auto flex items-center justify-between pb-4 border-b border-slate-800/80 z-20">
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 text-white font-bold">
@@ -137,34 +136,37 @@
         <div>
           <div class="flex items-center gap-2">
             <h1 class="text-lg font-bold text-white tracking-tight">Exhibition Guestbook</h1>
-            <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 uppercase tracking-widest">Public Kiosk</span>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 uppercase tracking-wider">Kiosk Terminal</span>
           </div>
-          <p class="text-xs text-slate-400">Your name and hand signature will float live on the Big Wall Display</p>
+          <p class="text-xs text-slate-400">Sign with finger/stylus to fly your balloon on the Main Wall Display</p>
         </div>
       </div>
 
       <div class="flex items-center gap-2 sm:gap-3">
-        <!-- Live Cloud Status Indicator -->
-        <div id="cloudConnectionBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-400">
-          <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse" id="cloudStatusDot"></span>
-          <span id="cloudStatusText">Connecting Cloud...</span>
-        </div>
-
-        <!-- Button to open Display Mode in new tab/projector -->
-        <button onclick="launchBigDisplayWindow()" class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white text-xs font-semibold shadow-lg shadow-indigo-600/20 transition-all active:scale-95">
-          <i class="fa-solid fa-tv"></i>
-          <span class="hidden sm:inline">Big Display Wall</span>
-          <i class="fa-solid fa-arrow-up-right-from-square text-[10px] opacity-75"></i>
+        <!-- Room Badge -->
+        <button onclick="promptChangeRoomCode()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-cyan-500/40 text-xs text-slate-300 font-mono transition" title="Change target room code">
+          <i class="fa-solid fa-satellite-dish text-cyan-400 text-[11px]"></i>
+          <span>Room:</span>
+          <span id="kioskRoomLabel" class="font-bold text-white">EXPO-2026</span>
+          <i class="fa-solid fa-pen text-[10px] text-slate-500 ml-0.5"></i>
         </button>
 
-        <button onclick="switchView('display')" class="px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-medium transition" title="Preview Wall Mode locally">
-          <i class="fa-regular fa-eye"></i>
+        <!-- Cloud status -->
+        <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-400">
+          <span class="w-2 h-2 rounded-full bg-emerald-400" id="cloudStatusDot"></span>
+          <span id="cloudStatusText">Live Cloud</span>
+        </div>
+
+        <!-- Go to Big Display View (requires PIN) -->
+        <button onclick="openDisplayWithAuth()" class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white text-xs font-semibold shadow-lg shadow-indigo-600/25 transition active:scale-95">
+          <i class="fa-solid fa-lock text-[10px]"></i>
+          <span>Display Screen</span>
         </button>
       </div>
     </header>
 
-    <!-- Main Entry Form -->
-    <main class="w-full max-w-4xl mx-auto my-auto py-6 z-10">
+    <!-- Kiosk Input Body -->
+    <main class="w-full max-w-4xl mx-auto my-auto py-5 z-10">
       <form id="kioskGuestForm" onsubmit="handleFormSubmission(event)" class="glass-panel rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col gap-6">
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -182,7 +184,7 @@
                   name="guestName" 
                   required 
                   maxlength="32" 
-                  placeholder="e.g. Elena Rostova"
+                  placeholder="e.g. Maya Lin"
                   class="w-full bg-slate-950/80 border border-slate-700/80 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 rounded-2xl pl-10 pr-4 py-3 text-white placeholder-slate-500 text-sm font-medium outline-none transition"
                   autocomplete="off"
                 >
@@ -200,7 +202,7 @@
                   id="guestAffiliation" 
                   name="guestAffiliation" 
                   maxlength="45" 
-                  placeholder="e.g. Design Lead • Tokyo"
+                  placeholder="e.g. Architect • Tokyo"
                   class="w-full bg-slate-950/80 border border-slate-700/80 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 rounded-2xl pl-10 pr-4 py-3 text-white placeholder-slate-500 text-sm font-medium outline-none transition"
                   autocomplete="off"
                 >
@@ -209,26 +211,24 @@
 
             <!-- Balloon Color Selection -->
             <div>
-              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2.5">
-                Choose Balloon Style
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
+                Select Balloon Color
               </label>
-              <div id="balloonColorGrid" class="grid grid-cols-6 gap-2">
-                <!-- Color palette cards injected by JS -->
-              </div>
+              <div id="balloonColorGrid" class="grid grid-cols-6 gap-2"></div>
             </div>
 
             <div class="p-3 bg-slate-950/60 rounded-2xl border border-slate-800 text-xs text-slate-400 flex items-center gap-2.5">
               <i class="fa-solid fa-infinity text-cyan-400 text-sm"></i>
-              <span>No timer! Your balloon stays on screen permanently until popped or tapped.</span>
+              <span>No timer! Your balloon will remain floating in the room display.</span>
             </div>
           </div>
 
-          <!-- Right Column: Canvas Signature Pad -->
+          <!-- Right Column: Signature Pad -->
           <div class="flex flex-col">
             <div class="flex items-center justify-between mb-2">
               <label class="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
                 <i class="fa-solid fa-pen-fancy text-cyan-400"></i>
-                <span>Your Hand Signature <span class="text-rose-400">*</span></span>
+                <span>Signature Pad <span class="text-rose-400">*</span></span>
               </label>
 
               <div class="flex items-center gap-1">
@@ -244,16 +244,16 @@
               </div>
             </div>
 
-            <!-- Signature Canvas -->
+            <!-- Drawing Area -->
             <div class="relative w-full h-56 bg-slate-950 rounded-2xl border-2 border-dashed border-slate-700/80 hover:border-cyan-500/60 overflow-hidden shadow-inner transition group">
               <canvas id="kioskSignatureCanvas" class="w-full h-full cursor-crosshair touch-none absolute inset-0 z-10"></canvas>
               
               <div class="absolute inset-x-6 bottom-6 border-b border-slate-800 pointer-events-none flex justify-between items-center text-[11px] text-slate-600 font-mono">
-                <span>Sign using mouse, stylus, or fingertip</span>
+                <span>Sign using stylus, fingertip, or mouse</span>
                 <i class="fa-solid fa-feather-pointed opacity-40"></i>
               </div>
             </div>
-            <p class="text-[11px] text-slate-500 mt-2">Your drawn signature will be rendered directly inside your balloon.</p>
+            <p class="text-[11px] text-slate-500 mt-2">Drawn signature will be embedded directly in your room's balloon.</p>
           </div>
         </div>
 
@@ -264,7 +264,7 @@
           class="relative w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-cyan-500 via-sky-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-slate-950 font-bold text-base shadow-xl shadow-cyan-500/25 active:scale-[0.99] transition-all flex items-center justify-center gap-2.5 cursor-pointer"
         >
           <i class="fa-solid fa-paper-plane text-slate-950"></i>
-          <span>Send to Big Display Wall</span>
+          <span>Send to Event Display (<span id="btnRoomText">EXPO-2026</span>)</span>
           <i class="fa-solid fa-arrow-right text-xs opacity-75"></i>
         </button>
       </form>
@@ -273,86 +273,145 @@
     <!-- Footer -->
     <footer class="w-full max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 pt-3 border-t border-slate-800/60 z-10 gap-2">
       <div class="flex items-center gap-2">
-        <i class="fa-solid fa-wifi text-emerald-400 text-[10px]"></i>
-        <span>Multi-device synced over Exhibition Cloud</span>
+        <i class="fa-solid fa-network-wired text-cyan-400 text-[10px]"></i>
+        <span>Target Room: <strong class="text-slate-300 font-mono" id="footerRoomLabel">EXPO-2026</strong></span>
       </div>
       <div class="flex items-center gap-3">
-        <button onclick="spawnSampleGuest()" class="hover:text-slate-300 transition text-[11px]">Demo Sample</button>
+        <button onclick="spawnSampleGuest()" class="hover:text-slate-300 transition text-[11px]">Spawn Test Attendee</button>
       </div>
     </footer>
 
-    <!-- Kiosk Success Overlay -->
+    <!-- Kiosk Success Splash Overlay -->
     <div id="kioskSuccessOverlay" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
       <div class="bg-slate-900 border border-cyan-500/40 rounded-3xl p-8 max-w-sm w-full mx-4 text-center shadow-2xl shadow-cyan-500/20 transform scale-95 transition-transform duration-300" id="kioskSuccessCard">
         <div class="w-16 h-16 rounded-3xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 flex items-center justify-center mx-auto mb-4">
-          <i class="fa-solid fa-balloon text-2xl"></i>
+          <i class="fa-solid fa-check text-2xl"></i>
         </div>
         <h3 class="text-2xl font-black text-white tracking-tight mb-1">Uploaded!</h3>
         <p class="text-sm text-slate-300 mb-6">
-          Thank you, <strong id="successGuestName" class="text-cyan-400">Guest</strong>! Your balloon has joined the Big Display screen.
+          Thank you, <strong id="successGuestName" class="text-cyan-400">Guest</strong>! Your balloon has joined the Exhibition Big Display.
         </p>
         <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
           <div id="resetCountdownBar" class="h-full bg-cyan-400" style="width: 100%;"></div>
         </div>
-        <p class="text-[11px] text-slate-500 mt-2">Ready for the next guest in <span id="countdownSecText">3</span>s...</p>
+        <p class="text-[11px] text-slate-500 mt-2">Ready for the next attendee in <span id="countdownSecText">3</span>s...</p>
       </div>
     </div>
   </section>
 
   <!-- ========================================================================= -->
-  <!-- SCREEN 2: BIG DISPLAY / PROJECTOR WALL (Shows floating balloons only)     -->
+  <!-- PIN VERIFICATION MODAL (Prevents unauthorized public access)              -->
+  <!-- ========================================================================= -->
+  <div id="pinLockModal" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-lg flex items-center justify-center p-4">
+    <div class="glass-panel border border-slate-700 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative text-center">
+      <button onclick="closePinModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-2">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="w-14 h-14 rounded-2xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center mx-auto mb-4">
+        <i class="fa-solid fa-shield-halved text-2xl"></i>
+      </div>
+
+      <h3 class="text-xl font-bold text-white mb-1">Authorized Display Screen</h3>
+      <p class="text-xs text-slate-400 mb-6">Enter the 4-digit Event Display PIN to unlock the big screen projection for this room.</p>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-mono uppercase text-slate-400 text-left mb-1.5">Event Room Code</label>
+          <input 
+            type="text" 
+            id="pinModalRoomInput" 
+            value="EXPO-2026" 
+            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 font-mono text-cyan-300 font-bold uppercase tracking-wider text-center outline-none focus:border-cyan-400"
+          >
+        </div>
+
+        <div>
+          <label class="block text-xs font-mono uppercase text-slate-400 text-left mb-1.5">Display 4-Digit PIN</label>
+          <input 
+            type="password" 
+            id="pinModalPassInput" 
+            maxlength="4" 
+            placeholder="••••" 
+            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 font-mono text-2xl text-white tracking-[0.5em] text-center outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20"
+          >
+          <p class="text-[11px] text-slate-500 text-left mt-1.5 flex items-center gap-1">
+            <i class="fa-solid fa-circle-info text-indigo-400"></i>
+            <span>Default Demo PIN is <strong>1234</strong></span>
+          </p>
+        </div>
+
+        <p id="pinErrorMessage" class="text-xs text-rose-400 font-medium hidden">Incorrect PIN. Please re-enter the 4-digit code.</p>
+
+        <button 
+          onclick="verifyPinAndEnterDisplay()" 
+          class="w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition active:scale-98"
+        >
+          Unlock & Launch Big Display
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- SCREEN 2: BIG DISPLAY WALL (Protected Projector View)                     -->
   <!-- ========================================================================= -->
   <section id="bigDisplayScreen" class="hidden relative w-full h-full galaxy-bg overflow-hidden select-none">
     
-    <!-- Cosmic Canvas for space dust ambience -->
+    <!-- Cosmic background canvas -->
     <canvas id="displayCosmicCanvas" class="absolute inset-0 pointer-events-none z-0"></canvas>
 
-    <!-- Top Exhibition Ambient HUD -->
-    <header class="absolute top-0 inset-x-0 z-30 flex items-center justify-between px-6 sm:px-10 py-5 pointer-events-none bg-gradient-to-b from-slate-950/90 to-transparent">
-      <!-- Left: Title -->
+    <!-- Top Ambient Exhibition HUD -->
+    <header class="absolute top-0 inset-x-0 z-30 flex items-center justify-between px-6 sm:px-10 py-5 pointer-events-none bg-gradient-to-b from-slate-950/95 to-transparent">
+      <!-- Title & Event Room Code -->
       <div class="flex items-center gap-3.5">
         <div class="w-11 h-11 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 backdrop-blur-md flex items-center justify-center text-cyan-300 shadow-lg shadow-cyan-500/10">
           <i class="fa-solid fa-shapes text-lg"></i>
         </div>
         <div>
           <h2 class="text-xl sm:text-2xl font-black tracking-tight text-white uppercase font-mono flex items-center gap-2.5">
-            <span>Exhibition Guest Wall</span>
+            <span>Exhibition Wall</span>
             <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse inline-block"></span>
           </h2>
-          <p class="text-xs text-slate-400 tracking-wider">Leave your signature from any kiosk or scan the QR code</p>
+          <div class="flex items-center gap-2 mt-0.5">
+            <span class="text-xs font-mono px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 uppercase font-bold" id="displayRoomBadge">
+              Room: EXPO-2026
+            </span>
+            <span class="text-xs text-slate-400">• Touch or click balloons to pop</span>
+          </div>
         </div>
       </div>
 
-      <!-- Center: Stats HUD -->
+      <!-- Stats HUD -->
       <div class="hidden md:flex items-center gap-6 px-6 py-2 rounded-2xl glass-panel shadow-2xl">
         <div class="text-center">
-          <span class="block text-[10px] uppercase font-mono tracking-widest text-slate-400">Floating Balloons</span>
+          <span class="block text-[10px] uppercase font-mono tracking-widest text-slate-400">On Display</span>
           <span id="wallActiveCount" class="text-2xl font-black text-cyan-300 font-mono">0</span>
         </div>
         <div class="h-7 w-px bg-slate-700/60"></div>
         <div class="text-center">
-          <span class="block text-[10px] uppercase font-mono tracking-widest text-slate-400">Total Welcomed</span>
+          <span class="block text-[10px] uppercase font-mono tracking-widest text-slate-400">Total Signatures</span>
           <span id="wallTotalCount" class="text-xl font-bold text-slate-200 font-mono">0</span>
         </div>
         <div class="h-7 w-px bg-slate-700/60"></div>
         <div class="text-center">
-          <span class="block text-[10px] uppercase font-mono tracking-widest text-slate-400">Time</span>
+          <span class="block text-[10px] uppercase font-mono tracking-widest text-slate-400">Clock</span>
           <span id="wallClockTime" class="text-base font-bold text-amber-300 font-mono">--:--</span>
         </div>
       </div>
 
-      <!-- Right: Screen Controls -->
+      <!-- Top Controls -->
       <div class="flex items-center gap-2.5 pointer-events-auto">
-        <!-- QR Code button for visitors to sign on phones -->
-        <button onclick="toggleQRModal()" class="px-3.5 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-cyan-300 border border-cyan-500/30 backdrop-blur-md text-xs font-semibold flex items-center gap-2 shadow-lg transition" title="Scan to sign on smartphone">
+        <!-- QR Code for mobile visitors -->
+        <button onclick="toggleQRModal()" class="px-3.5 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-cyan-300 border border-cyan-500/30 backdrop-blur-md text-xs font-semibold flex items-center gap-2 shadow-lg transition" title="Show QR Code for Attendees">
           <i class="fa-solid fa-qrcode text-sm"></i>
-          <span class="hidden sm:inline">Scan to Sign</span>
+          <span class="hidden sm:inline">QR Code to Sign</span>
         </button>
 
-        <!-- Admin drawer toggle -->
-        <button onclick="toggleAdminPanel()" class="px-3 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 backdrop-blur-md text-xs font-semibold flex items-center gap-1.5 transition" title="Admin controls">
+        <!-- Admin Settings -->
+        <button onclick="toggleAdminPanel()" class="px-3 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 backdrop-blur-md text-xs font-semibold flex items-center gap-1.5 transition" title="Exhibition controls">
           <i class="fa-solid fa-sliders"></i>
-          <span class="hidden sm:inline">Controls</span>
+          <span class="hidden sm:inline">Admin</span>
         </button>
 
         <!-- Fullscreen -->
@@ -361,19 +420,19 @@
           <span class="hidden sm:inline">Fullscreen</span>
         </button>
 
-        <!-- Laptop View return -->
-        <button onclick="switchView('laptop')" class="px-3 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 backdrop-blur-md text-xs font-medium transition" title="Switch back to laptop view">
-          <i class="fa-solid fa-laptop"></i>
+        <!-- Exit back to Laptop Kiosk -->
+        <button onclick="switchView('laptop')" class="px-3 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 backdrop-blur-md text-xs font-medium transition" title="Exit to Laptop Kiosk">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i>
         </button>
       </div>
     </header>
 
-    <!-- Admin Floating Control Drawer (Collapsible) -->
+    <!-- Admin Floating Control Drawer -->
     <div id="adminPanelModal" class="hidden absolute top-20 right-8 z-40 w-72 glass-panel rounded-2xl p-4 shadow-2xl border border-slate-700/80 pointer-events-auto transition-all">
       <div class="flex items-center justify-between pb-3 border-b border-slate-700/80 mb-3">
         <h4 class="text-xs font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
           <i class="fa-solid fa-toolbox text-cyan-400"></i>
-          <span>Exhibition Admin</span>
+          <span>Exhibition Host Menu</span>
         </h4>
         <button onclick="toggleAdminPanel()" class="text-slate-400 hover:text-white text-xs">
           <i class="fa-solid fa-xmark"></i>
@@ -387,7 +446,13 @@
           </button>
         </div>
         <div class="flex items-center justify-between">
-          <span class="text-slate-300">Test Sample Guest</span>
+          <span class="text-slate-300">Change PIN Code</span>
+          <button onclick="promptChangePin()" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-slate-700 font-mono">
+            PIN: <span id="adminCurrentPinLabel">1234</span>
+          </button>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-slate-300">Test Attendee Balloon</span>
           <button onclick="spawnSampleGuest()" class="px-2.5 py-1 rounded-lg bg-cyan-900/50 hover:bg-cyan-800/60 text-cyan-300 border border-cyan-700/50">
             + Add 1
           </button>
@@ -395,13 +460,13 @@
         <div class="pt-2 border-t border-slate-700/80">
           <button onclick="requestPopAllBalloons()" class="w-full py-2 px-3 rounded-xl bg-rose-950/70 hover:bg-rose-900/80 border border-rose-700/60 text-rose-300 font-semibold transition flex items-center justify-center gap-2">
             <i class="fa-solid fa-bomb text-xs"></i>
-            <span>Pop All Screen Balloons</span>
+            <span>Clear / Pop All Balloons</span>
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Phone QR Code Modal -->
+    <!-- Mobile QR Code Modal -->
     <div id="qrModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
       <div class="glass-panel border border-cyan-500/40 rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center shadow-2xl relative">
         <button onclick="toggleQRModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-2">
@@ -410,8 +475,8 @@
         <div class="w-12 h-12 rounded-2xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 flex items-center justify-center mx-auto mb-3">
           <i class="fa-solid fa-mobile-screen-button text-lg"></i>
         </div>
-        <h3 class="text-xl font-bold text-white mb-1">Scan with Your Phone</h3>
-        <p class="text-xs text-slate-400 mb-5">Open your camera to launch the signature kiosk on your mobile device!</p>
+        <h3 class="text-xl font-bold text-white mb-1">Scan & Sign</h3>
+        <p class="text-xs text-slate-400 mb-4">Open camera on your smartphone to submit your signature to <strong id="qrRoomCodeLabel" class="text-cyan-300 font-mono">EXPO-2026</strong>!</p>
         
         <div class="p-4 bg-white rounded-2xl inline-block shadow-lg mx-auto" id="qrContainer"></div>
 
@@ -419,23 +484,20 @@
       </div>
     </div>
 
-    <!-- Bottom Exhibition Info Bar -->
+    <!-- Bottom info footer -->
     <footer class="absolute bottom-4 inset-x-0 mx-auto w-fit z-30 pointer-events-none px-6 py-2 rounded-full glass-panel text-xs text-slate-400 flex items-center gap-3 shadow-xl">
       <span class="flex items-center gap-1.5 text-cyan-400 font-semibold">
         <i class="fa-solid fa-hand-pointer text-xs"></i>
-        <span>Touch or Click any balloon to POP</span>
+        <span>Tap any balloon to pop</span>
       </span>
       <span class="text-slate-600">•</span>
-      <span>No expiration timer — floating indefinitely</span>
+      <span>No timer — balloons stay on screen</span>
     </footer>
 
-    <!-- BALLOON STAGE (Physics floating playground) -->
-    <div id="balloonStage" class="relative w-full h-full z-10 overflow-hidden pointer-events-auto">
-      <!-- Dynamic Balloon nodes rendered here -->
-    </div>
+    <!-- BALLOON STAGE -->
+    <div id="balloonStage" class="relative w-full h-full z-10 overflow-hidden pointer-events-auto"></div>
   </section>
 
-  <!-- Firebase Modular Imports -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -463,12 +525,19 @@
     let authUser = null;
     let db = null;
     let balloonsCollectionRef = null;
-    let activeBalloonsMap = new Map(); // id -> balloon document
-    let balloonInstancesMap = new Map(); // id -> FloatingBalloonEntity
+    let unsubscribeBalloonsListener = null;
+
+    // Room Code & PIN Protection Settings
+    let currentRoomCode = 'EXPO-2026';
+    let currentDisplayPin = '1234';
+    let isDisplayUnlocked = false;
+
+    // State Tracking
+    let activeBalloonsMap = new Map();
+    let balloonInstancesMap = new Map();
     let totalSignaturesCount = 0;
 
-    // Firebase Global config setup
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'exhibition-guestbook-default';
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'exhibition-guestbook-app';
     const rawFirebaseConfig = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
     const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
@@ -527,7 +596,7 @@
     }
     const audioSynth = new AudioEngine();
 
-    /* Signature Pad Handler */
+    /* Signature Drawing Canvas */
     let sigCanvas, sigCtx;
     let isDrawing = false;
     let hasDrawnOnPad = false;
@@ -640,16 +709,15 @@
       });
     }
 
-    /* Cloud Initialization & Real-Time Sync */
-    async function initCloudFirestore() {
+    /* Firebase & Room Synchronization */
+    async function initCloudSync() {
       const statusDot = document.getElementById('cloudStatusDot');
       const statusText = document.getElementById('cloudStatusText');
 
       if (!rawFirebaseConfig) {
-        // Fallback for standalone demo / offline mode
         if (statusText) statusText.textContent = 'Local Mode';
         if (statusDot) statusDot.className = 'w-2 h-2 rounded-full bg-cyan-400';
-        setupLocalFallbackStorage();
+        setupLocalStoreFallback();
         return;
       }
 
@@ -659,7 +727,6 @@
         const auth = getAuth(app);
         db = getFirestore(app);
 
-        // Strict Rule: Sign in first before queries
         if (initialAuthToken) {
           await signInWithCustomToken(auth, initialAuthToken);
         } else {
@@ -667,46 +734,56 @@
         }
 
         authUser = auth.currentUser;
-        if (!authUser) {
-          throw new Error('Authentication failed');
-        }
+        if (!authUser) throw new Error('Auth failed');
 
         if (statusText) statusText.textContent = 'Cloud Connected';
         if (statusDot) statusDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
 
-        // Strict Rule 1: Public path `/artifacts/{appId}/public/data/{collectionName}`
+        // Public collection path adhering to Rule 1
         balloonsCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'balloons');
 
-        // Real-time snapshot sync: No complex queries (filter in memory)
-        onSnapshot(balloonsCollectionRef, (snapshot) => {
-          const remoteMap = new Map();
-          let totalCount = snapshot.size;
-
-          snapshot.forEach(docSnap => {
-            const data = docSnap.data();
-            const id = docSnap.id;
-            // Only include balloons that have NOT been popped
-            if (!data.popped) {
-              remoteMap.set(id, { id, ...data });
-            }
-          });
-
-          handleBalloonsStateUpdate(remoteMap, totalCount);
-        }, (error) => {
-          console.error("Firestore onSnapshot error:", error);
-          if (statusText) statusText.textContent = 'Cloud Sync Warning';
-        });
+        bindRoomListener();
 
       } catch (err) {
-        console.warn("Using offline localStorage fallback:", err);
+        console.warn("Falling back to local storage:", err);
         if (statusText) statusText.textContent = 'Local Standalone';
-        setupLocalFallbackStorage();
+        setupLocalStoreFallback();
       }
     }
 
-    /* Fallback for environments without Firebase tokens */
-    function setupLocalFallbackStorage() {
-      const STORAGE_KEY = 'exhibition_public_balloons_store';
+    function bindRoomListener() {
+      if (!db || !balloonsCollectionRef) return;
+      if (unsubscribeBalloonsListener) {
+        unsubscribeBalloonsListener();
+      }
+
+      // Rule 2: No complex queries. Simple collection listener, filter room in JS memory.
+      unsubscribeBalloonsListener = onSnapshot(balloonsCollectionRef, (snapshot) => {
+        const filteredMap = new Map();
+        let roomTotal = 0;
+
+        snapshot.forEach(docSnap => {
+          const data = docSnap.data();
+          const id = docSnap.id;
+          
+          // Match room code in memory
+          const bRoom = (data.roomCode || 'EXPO-2026').toUpperCase();
+          if (bRoom === currentRoomCode.toUpperCase()) {
+            roomTotal++;
+            if (!data.popped) {
+              filteredMap.set(id, { id, ...data });
+            }
+          }
+        });
+
+        handleBalloonsStateUpdate(filteredMap, roomTotal);
+      }, (error) => {
+        console.error("Firestore onSnapshot error:", error);
+      });
+    }
+
+    function setupLocalStoreFallback() {
+      const STORAGE_KEY = 'exhibition_secure_balloons_store';
       const readLocal = () => {
         try {
           const raw = localStorage.getItem(STORAGE_KEY);
@@ -719,16 +796,20 @@
       const sync = () => {
         const list = readLocal();
         const map = new Map();
+        let roomTotal = 0;
         list.forEach(b => {
-          if (!b.popped) map.set(b.id, b);
+          const bRoom = (b.roomCode || 'EXPO-2026').toUpperCase();
+          if (bRoom === currentRoomCode.toUpperCase()) {
+            roomTotal++;
+            if (!b.popped) map.set(b.id, b);
+          }
         });
-        handleBalloonsStateUpdate(map, list.length);
+        handleBalloonsStateUpdate(map, roomTotal);
       };
 
       window.addEventListener('storage', sync);
       sync();
 
-      // Implement simulated cloud write methods
       window.localStoreFallback = {
         add: (item) => {
           const list = readLocal();
@@ -744,7 +825,12 @@
           sync();
         },
         clearAll: () => {
-          const list = readLocal().map(b => ({ ...b, popped: true }));
+          const list = readLocal().map(b => {
+            if ((b.roomCode || 'EXPO-2026').toUpperCase() === currentRoomCode.toUpperCase()) {
+              return { ...b, popped: true };
+            }
+            return b;
+          });
           localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
           sync();
         }
@@ -758,14 +844,14 @@
 
       if (!isCurrentViewDisplay()) return;
 
-      // 1. Remove balloons that were popped remotely
+      // Remote popped balloons
       balloonInstancesMap.forEach((instance, id) => {
         if (!activeBalloonsMap.has(id)) {
           triggerLocalBalloonBurst(id);
         }
       });
 
-      // 2. Add new incoming balloons
+      // Newly added balloons
       activeBalloonsMap.forEach((balloonData, id) => {
         if (!balloonInstancesMap.has(id)) {
           spawnBalloonOnStage(balloonData, true);
@@ -807,6 +893,7 @@
       const balloonId = 'b_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
       const balloonPayload = {
         id: balloonId,
+        roomCode: currentRoomCode.toUpperCase(),
         name: name,
         affiliation: affiliation,
         signatureUrl: signatureDataUrl,
@@ -919,7 +1006,7 @@
             
             <div class="balloon-sheen"></div>
 
-            <!-- Top Header on Balloon -->
+            <!-- Top Tag on Balloon -->
             <div class="w-full flex items-center justify-between z-10">
               <span class="text-[10px] uppercase font-mono tracking-wider font-black px-2.5 py-0.5 rounded-full bg-black/30 text-white/95 border border-white/20">
                 Attendee
@@ -944,13 +1031,13 @@
               ${this.data.affiliation ? `<p class="text-[11px] text-white/85 font-medium italic truncate max-w-full px-2 mt-0.5">${escapeHtml(this.data.affiliation)}</p>` : ''}
             </div>
 
-            <!-- Knot & String -->
+            <!-- Balloon Knot & String -->
             <div class="balloon-knot" style="background: ${pal.border};"></div>
             <div class="balloon-string-line"></div>
           </div>
         `;
 
-        // Interactive Popping on click/tap
+        // Interactive popping on tap/click
         card.addEventListener('click', (e) => {
           e.stopPropagation();
           popBalloonAction(this.id);
@@ -970,7 +1057,7 @@
         this.y += this.vy;
         this.angle += this.vAngle;
 
-        // Bouncing inside canvas bounds
+        // Wall collisions
         if (this.x < 15) {
           this.x = 15;
           this.vx = Math.abs(this.vx) * 0.8;
@@ -1004,7 +1091,6 @@
     async function popBalloonAction(balloonId) {
       triggerLocalBalloonBurst(balloonId);
 
-      // Cloud mark as popped
       try {
         if (db && balloonsCollectionRef) {
           const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'balloons', balloonId);
@@ -1024,7 +1110,6 @@
       entity.isPopping = true;
       audioSynth.playPop();
 
-      // Confetti burst
       const rect = entity.dom.getBoundingClientRect();
       const originX = (rect.left + rect.width / 2) / window.innerWidth;
       const originY = (rect.top + rect.height / 2) / window.innerHeight;
@@ -1056,6 +1141,101 @@
       });
     }
 
+    /* PIN Security & Room Controls */
+    window.openDisplayWithAuth = function() {
+      if (isDisplayUnlocked) {
+        switchView('display');
+        return;
+      }
+      const modal = document.getElementById('pinLockModal');
+      const roomInput = document.getElementById('pinModalRoomInput');
+      const passInput = document.getElementById('pinModalPassInput');
+      const err = document.getElementById('pinErrorMessage');
+
+      if (roomInput) roomInput.value = currentRoomCode;
+      if (passInput) passInput.value = '';
+      if (err) err.classList.add('hidden');
+      if (modal) modal.classList.remove('hidden');
+    };
+
+    window.closePinModal = function() {
+      const modal = document.getElementById('pinLockModal');
+      if (modal) modal.classList.add('hidden');
+    };
+
+    window.verifyPinAndEnterDisplay = function() {
+      const passInput = document.getElementById('pinModalPassInput');
+      const roomInput = document.getElementById('pinModalRoomInput');
+      const err = document.getElementById('pinErrorMessage');
+
+      const enteredPin = passInput ? passInput.value.trim() : '';
+      const enteredRoom = roomInput ? roomInput.value.trim().toUpperCase() : currentRoomCode;
+
+      if (enteredPin === currentDisplayPin) {
+        isDisplayUnlocked = true;
+        closePinModal();
+        if (enteredRoom && enteredRoom !== currentRoomCode) {
+          setRoomCode(enteredRoom);
+        }
+        switchView('display');
+      } else {
+        if (err) err.classList.remove('hidden');
+        if (passInput) {
+          passInput.value = '';
+          passInput.focus();
+        }
+      }
+    };
+
+    window.promptChangeRoomCode = function() {
+      const nextRoom = prompt('Enter Event Room Code (e.g. EXPO-2026, ART-HALL-1):', currentRoomCode);
+      if (nextRoom && nextRoom.trim()) {
+        setRoomCode(nextRoom.trim().toUpperCase());
+      }
+    };
+
+    window.promptChangePin = function() {
+      const newPin = prompt('Set new 4-digit Display PIN:', currentDisplayPin);
+      if (newPin && newPin.trim().length === 4) {
+        currentDisplayPin = newPin.trim();
+        const pinLabel = document.getElementById('adminCurrentPinLabel');
+        if (pinLabel) pinLabel.textContent = currentDisplayPin;
+      }
+    };
+
+    function setRoomCode(newRoom) {
+      currentRoomCode = newRoom;
+      
+      // Update UI labels
+      const kioskRoomLabel = document.getElementById('kioskRoomLabel');
+      const footerRoomLabel = document.getElementById('footerRoomLabel');
+      const btnRoomText = document.getElementById('btnRoomText');
+      const displayRoomBadge = document.getElementById('displayRoomBadge');
+      const qrRoomCodeLabel = document.getElementById('qrRoomCodeLabel');
+
+      if (kioskRoomLabel) kioskRoomLabel.textContent = currentRoomCode;
+      if (footerRoomLabel) footerRoomLabel.textContent = currentRoomCode;
+      if (btnRoomText) btnRoomText.textContent = currentRoomCode;
+      if (displayRoomBadge) displayRoomBadge.textContent = `Room: ${currentRoomCode}`;
+      if (qrRoomCodeLabel) qrRoomCodeLabel.textContent = currentRoomCode;
+
+      // Clear existing stage balloons for previous room
+      balloonInstancesMap.forEach(entity => {
+        if (entity.dom && entity.dom.parentNode) entity.dom.parentNode.removeChild(entity.dom);
+      });
+      balloonInstancesMap.clear();
+      activeBalloonsMap.clear();
+
+      // Refresh URL hash query
+      const url = new URL(window.location.href);
+      url.searchParams.set('room', currentRoomCode);
+      window.history.replaceState({}, '', url.toString());
+
+      // Re-bind listener for new room
+      bindRoomListener();
+    }
+
+    /* Cosmic Background Particle Canvas */
     let cosmicCanvas, cosmicCtx;
     let particles = [];
 
@@ -1132,11 +1312,15 @@
       const displayScreen = document.getElementById('bigDisplayScreen');
 
       if (viewName === 'display') {
+        if (!isDisplayUnlocked) {
+          openDisplayWithAuth();
+          return;
+        }
         laptopScreen.classList.add('hidden');
         displayScreen.classList.remove('hidden');
         window.location.hash = 'display';
         resizeCosmicCanvas();
-        // Render all currently active balloons onto stage
+
         activeBalloonsMap.forEach((data, id) => {
           if (!balloonInstancesMap.has(id)) {
             spawnBalloonOnStage(data, false);
@@ -1148,11 +1332,6 @@
         window.location.hash = 'laptop';
         setTimeout(resizeSignaturePad, 60);
       }
-    };
-
-    window.launchBigDisplayWindow = function() {
-      const targetUrl = window.location.origin + window.location.pathname + '#display';
-      window.open(targetUrl, 'ExhibitionBigDisplayWall', 'width=1920,height=1080,menubar=no,toolbar=no,location=no');
     };
 
     window.toggleFullscreen = function() {
@@ -1194,8 +1373,8 @@
       if (!container) return;
       container.innerHTML = '';
 
-      // Direct URL to the visitor kiosk
-      const kioskUrl = window.location.origin + window.location.pathname + '#laptop';
+      // Direct link to the submission kiosk locked to this room
+      const kioskUrl = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(currentRoomCode)}#laptop`;
       if (label) label.textContent = kioskUrl;
 
       new QRCode(container, {
@@ -1212,11 +1391,12 @@
       const sampleNames = ['Dr. Elena Vance', 'Kenji Takahashi', 'Amina Al-Mansoor', 'Marcus Zhao', 'Liam O\'Connor'];
       const sampleNotes = ['Quantum Labs • Tokyo', 'VR Research Fellow', 'Loved the Design Show', 'Robotics Architect', 'Visitor #108'];
       const randName = sampleNames[Math.floor(Math.random() * sampleNames.length)];
-      const randNote = sampleNotes[Math.floor(Math.random() * sampleNotes.length)];
+      const randNote = sampleNotes[Math.floor(Math.random() * sampleNames.length)];
       const randPalette = PALETTES[Math.floor(Math.random() * PALETTES.length)];
 
       const sampleBalloon = {
         id: 'b_sample_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+        roomCode: currentRoomCode.toUpperCase(),
         name: randName,
         affiliation: randNote,
         signatureUrl: generateCursiveFallbackSignature(randName),
@@ -1271,17 +1451,25 @@
     }
 
     window.addEventListener('load', async () => {
+      // Check query parameter for room code: ?room=ROOM_CODE
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlRoom = urlParams.get('room');
+      if (urlRoom && urlRoom.trim()) {
+        currentRoomCode = urlRoom.trim().toUpperCase();
+      }
+
+      setRoomCode(currentRoomCode);
       renderColorPalettePicker();
       initSignaturePad();
       initCosmicCanvas();
       startPhysicsLoop();
       updateWallClock();
 
-      await initCloudFirestore();
+      await initCloudSync();
 
-      // Check URL route: #display opens the wall, otherwise kiosk
+      // If user directly navigates to #display, prompt for PIN first
       if (window.location.hash.toLowerCase().includes('display')) {
-        switchView('display');
+        openDisplayWithAuth();
       } else {
         switchView('laptop');
       }
