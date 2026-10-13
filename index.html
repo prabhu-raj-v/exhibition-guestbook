@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exhibition Public Guestbook • Cloud Wall</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Space Grotesk & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <!-- QRCode.js for phone scanning kiosk URL -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Outfit', 'sans-serif'],
+            mono: ['Space Grotesk', 'monospace'],
+          },
+          animation: {
+            'shaking-pop': 'shakePop 0.65s cubic-bezier(.36,.07,.19,.97) both',
+          },
+          keyframes: {
+            shakePop: {
+              '0%': { transform: 'scale(1) translate(0, 0)' },
+              '20%': { transform: 'scale(1.15) translate(-4px, 3px)' },
+              '40%': { transform: 'scale(1.25) translate(4px, -3px)' },
+              '60%': { transform: 'scale(1.35) translate(-5px, 2px)' },
+              '80%': { transform: 'scale(1.5) translate(3px, -2px)' },
+              '100%': { transform: 'scale(0) opacity(0)' }
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    input, textarea {
+      user-select: text;
+    }
+    body {
+      background-color: #030712;
+      color: #f8fafc;
+      overflow: hidden;
+      touch-action: manipulation;
+    }
+
+    .galaxy-bg {
+      background: radial-gradient(circle at 50% 20%, #1e1b4b 0%, #0f172a 45%, #030712 100%);
+    }
+
+    /* 3D Balloon shape */
+    .balloon-body {
+      border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+      position: relative;
+      transform-origin: center bottom;
+      transition: filter 0.25s ease, transform 0.15s ease;
+      will-change: transform;
+    }
+
+    .balloon-sheen {
+      position: absolute;
+      top: 10%;
+      left: 14%;
+      width: 28%;
+      height: 22%;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0) 80%);
+      transform: rotate(-35deg);
+      pointer-events: none;
+    }
+
+    .balloon-knot {
+      position: absolute;
+      bottom: -6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 14px;
+      height: 9px;
+      border-radius: 2px 2px 50% 50%;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+    }
+
+    .balloon-string-line {
+      position: absolute;
+      bottom: -46px;
+      left: 50%;
+      width: 2px;
+      height: 46px;
+      background: linear-gradient(to bottom, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.1));
+      transform-origin: top center;
+    }
+
+    /* Modal Glass */
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+  </style>
+</head>
+<body class="h-screen w-screen overflow-hidden text-slate-100 font-sans antialiased">
+
+  <!-- ========================================================================= -->
+  <!-- SCREEN 1: LAPTOP / MOBILE VISITOR KIOSK (Public Input Terminal)          -->
+  <!-- ========================================================================= -->
+  <section id="laptopKioskScreen" class="relative w-full h-full flex flex-col justify-between overflow-y-auto bg-slate-950 p-4 sm:p-6 lg:p-8">
+    <div class="fixed top-[-10%] right-[-5%] w-[420px] h-[420px] bg-cyan-600/10 rounded-full blur-[120px] pointer-events-none"></div>
+    <div class="fixed bottom-[-10%] left-[-5%] w-[420px] h-[420px] bg-purple-600/10 rounded-full blur-[120px] pointer-events-none"></div>
+
+    <!-- Header -->
+    <header class="w-full max-w-5xl mx-auto flex items-center justify-between pb-4 border-b border-slate-800/80 z-20">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 text-white font-bold">
+          <i class="fa-solid fa-signature text-base"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-lg font-bold text-white tracking-tight">Exhibition Guestbook</h1>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 uppercase tracking-widest">Public Kiosk</span>
+          </div>
+          <p class="text-xs text-slate-400">Your name and hand signature will float live on the Big Wall Display</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 sm:gap-3">
+        <!-- Live Cloud Status Indicator -->
+        <div id="cloudConnectionBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-400">
+          <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse" id="cloudStatusDot"></span>
+          <span id="cloudStatusText">Connecting Cloud...</span>
+        </div>
+
+        <!-- Button to open Display Mode in new tab/projector -->
+        <button onclick="launchBigDisplayWindow()" class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white text-xs font-semibold shadow-lg shadow-indigo-600/20 transition-all active:scale-95">
+          <i class="fa-solid fa-tv"></i>
+          <span class="hidden sm:inline">Big Display Wall</span>
+          <i class="fa-solid fa-arrow-up-right-from-square text-[10px] opacity-75"></i>
+        </button>
+
+        <button onclick="switchView('display')" class="px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-medium transition" title="Preview Wall Mode locally">
+          <i class="fa-regular fa-eye"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Entry Form -->
+    <main class="w-full max-w-4xl mx-auto my-auto py-6 z-10">
+      <form id="kioskGuestForm" onsubmit="handleFormSubmission(event)" class="glass-panel rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col gap-6">
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Left Column -->
+          <div class="flex flex-col justify-between space-y-4">
+            <div>
+              <label for="guestName" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
+                Your Full Name <span class="text-rose-400">*</span>
+              </label>
+              <div class="relative">
+                <i class="fa-regular fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                <input 
+                  type="text" 
+                  id="guestName" 
+                  name="guestName" 
+                  required 
+                  maxlength="32" 
+                  placeholder="e.g. Elena Rostova"
+                  class="w-full bg-slate-950/80 border border-slate-700/80 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 rounded-2xl pl-10 pr-4 py-3 text-white placeholder-slate-500 text-sm font-medium outline-none transition"
+                  autocomplete="off"
+                >
+              </div>
+            </div>
+
+            <div>
+              <label for="guestAffiliation" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
+                Affiliation / City / Message <span class="text-slate-500 font-normal text-[11px]">(Optional)</span>
+              </label>
+              <div class="relative">
+                <i class="fa-regular fa-building absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                <input 
+                  type="text" 
+                  id="guestAffiliation" 
+                  name="guestAffiliation" 
+                  maxlength="45" 
+                  placeholder="e.g. Design Lead • Tokyo"
+                  class="w-full bg-slate-950/80 border border-slate-700/80 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 rounded-2xl pl-10 pr-4 py-3 text-white placeholder-slate-500 text-sm font-medium outline-none transition"
+                  autocomplete="off"
+                >
+              </div>
+            </div>
+
+            <!-- Balloon Color Selection -->
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2.5">
+                Choose Balloon Style
+              </label>
+              <div id="balloonColorGrid" class="grid grid-cols-6 gap-2">
+                <!-- Color palette cards injected by JS -->
+              </div>
+            </div>
+
+            <div class="p-3 bg-slate-950/60 rounded-2xl border border-slate-800 text-xs text-slate-400 flex items-center gap-2.5">
+              <i class="fa-solid fa-infinity text-cyan-400 text-sm"></i>
+              <span>No timer! Your balloon stays on screen permanently until popped or tapped.</span>
+            </div>
+          </div>
+
+          <!-- Right Column: Canvas Signature Pad -->
+          <div class="flex flex-col">
+            <div class="flex items-center justify-between mb-2">
+              <label class="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                <i class="fa-solid fa-pen-fancy text-cyan-400"></i>
+                <span>Your Hand Signature <span class="text-rose-400">*</span></span>
+              </label>
+
+              <div class="flex items-center gap-1">
+                <div class="bg-slate-950 p-1 rounded-xl border border-slate-800 flex items-center gap-1">
+                  <button type="button" onclick="setStrokeWidth(2, this)" class="stroke-btn px-2 py-0.5 rounded text-[11px] font-medium text-slate-400 hover:text-white transition">Thin</button>
+                  <button type="button" onclick="setStrokeWidth(4, this)" class="stroke-btn px-2 py-0.5 rounded text-[11px] font-bold text-cyan-400 bg-slate-800 transition">Med</button>
+                  <button type="button" onclick="setStrokeWidth(7, this)" class="stroke-btn px-2 py-0.5 rounded text-[11px] font-medium text-slate-400 hover:text-white transition">Bold</button>
+                </div>
+                <button type="button" onclick="clearSignatureCanvas()" class="px-2.5 py-1 rounded-xl bg-slate-950 hover:bg-rose-950/40 border border-slate-800 hover:border-rose-500/40 text-slate-400 hover:text-rose-400 text-xs font-medium transition flex items-center gap-1">
+                  <i class="fa-solid fa-eraser text-[10px]"></i>
+                  <span>Clear</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Signature Canvas -->
+            <div class="relative w-full h-56 bg-slate-950 rounded-2xl border-2 border-dashed border-slate-700/80 hover:border-cyan-500/60 overflow-hidden shadow-inner transition group">
+              <canvas id="kioskSignatureCanvas" class="w-full h-full cursor-crosshair touch-none absolute inset-0 z-10"></canvas>
+              
+              <div class="absolute inset-x-6 bottom-6 border-b border-slate-800 pointer-events-none flex justify-between items-center text-[11px] text-slate-600 font-mono">
+                <span>Sign using mouse, stylus, or fingertip</span>
+                <i class="fa-solid fa-feather-pointed opacity-40"></i>
+              </div>
+            </div>
+            <p class="text-[11px] text-slate-500 mt-2">Your drawn signature will be rendered directly inside your balloon.</p>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button 
+          type="submit" 
+          id="btnSendBalloon"
+          class="relative w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-cyan-500 via-sky-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-slate-950 font-bold text-base shadow-xl shadow-cyan-500/25 active:scale-[0.99] transition-all flex items-center justify-center gap-2.5 cursor-pointer"
+        >
+          <i class="fa-solid fa-paper-plane text-slate-950"></i>
+          <span>Send to Big Display Wall</span>
+          <i class="fa-solid fa-arrow-right text-xs opacity-75"></i>
+        </button>
+      </form>
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 pt-3 border-t border-slate-800/60 z-10 gap-2">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-wifi text-emerald-400 text-[10px]"></i>
+        <span>Multi-device synced over Exhibition Cloud</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <button onclick="spawnSampleGuest()" class="hover:text-slate-300 transition text-[11px]">Demo Sample</button>
+      </div>
+    </footer>
+
+    <!-- Kiosk Success Overlay -->
+    <div id="kioskSuccessOverlay" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+      <div class="bg-slate-900 border border-cyan-500/40 rounded-3xl p-8 max-w-sm w-full mx-4 text-center shadow-2xl shadow-cyan-500/20 transform scale-95 transition-transform duration-300" id="kioskSuccessCard">
+        <div class="w-16 h-16 rounded-3xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 flex items-center justify-center mx-auto mb-4">
+          <i class="fa-solid fa-balloon text-2xl"></i>
+        </div>
+        <h3 class="text-2xl font-black text-white tracking-tight mb-1">Uploaded!</h3>
+        <p class="text-sm text-slate-300 mb-6">
+          Thank you, <strong id="successGuestName" class="text-cyan-400">Guest</strong>! Your balloon has joined the Big Display screen.
+        </p>
+        <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+          <div id="resetCountdownBar" class="h-full bg-cyan-400" style="width: 100%;"></div>
+        </div>
+        <p class="text-[11px] text-slate-500 mt-2">Ready for the next guest in <span id="countdownSecText">3</span>s...</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- SCREEN 2: BIG DISPLAY / PROJECTOR WALL (Shows floating balloons only)     -->
+  <!-- ========================================================================= -->
+  <section id="bigDisplayScreen" class="hidden relative w-full h-full galaxy-bg overflow-hidden select-none">
+    
+    <!-- Cosmic Canvas for space dust ambience -->
+    <canvas id="displayCosmicCanvas" class="absolute inset-0 pointer-events-none z-0"></canvas>
+
+    <!-- Top Exhibition Ambient HUD -->
+    <header class="absolute top-0 inset-x-0 z-30 flex items-center justify-between px-6 sm:px-10 py-5 pointer-events-none bg-gradient-to-b from-slate-950/90 to-transparent">
+      <!-- Left: Title -->
+      <div class="flex items-center gap-3.5">
+        <div class="w-11 h-11 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 backdrop-blur-md flex items-center justify-center text-cyan-300 shadow-lg shadow-cyan-500/10">
+          <i class="fa-solid fa-shapes text-lg"></i>
+        </div>
+        <div>
+          <h2 class="text-xl sm:text-2xl font-black tracking-tight text-white uppercase font-mono flex items-center gap-2.5">
+            <span>Exhibition Guest Wall</span>
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse inline-block"></span>
+          </h2>
+          <p class="text-xs text-slate-400 tracking-wider">Leave your signature from any kiosk or scan the QR code</p>
+        </div>
+      </div>
+
+      <!-- Center: Stats HUD -->
+      <div class="hidden md:flex items-center gap-6 px-6 py-2 rounded-2xl glass-panel shadow-2xl">
+        <div class="text-center">
+          <span class="block text-[10px] uppercase font-mono tracking-widest text-slate-400">Floating Balloons</span>
+          <span id="wallActiveCount" class="text-2xl font-black text-cyan-300 font-mono">0</span>
+        </div>
+        <div class="h-7 w-px bg-slate-700/60"></div>
+        <div class="text-center">
+          <span class="block text-[10px] uppercase font-mono tracking-widest text-slate-400">Total Welcomed</span>
+          <span id="wallTotalCount" class="text-xl font-bold text-slate-200 font-mono">0</span>
+        </div>
+        <div class="h-7 w-px bg-slate-700/60"></div>
+        <div class="text-center">
+          <span class="block text-[10px] uppercase font-mono tracking-widest text-slate-400">Time</span>
+          <span id="wallClockTime" class="text-base font-bold text-amber-300 font-mono">--:--</span>
+        </div>
+      </div>
+
+      <!-- Right: Screen Controls -->
+      <div class="flex items-center gap-2.5 pointer-events-auto">
+        <!-- QR Code button for visitors to sign on phones -->
+        <button onclick="toggleQRModal()" class="px-3.5 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-cyan-300 border border-cyan-500/30 backdrop-blur-md text-xs font-semibold flex items-center gap-2 shadow-lg transition" title="Scan to sign on smartphone">
+          <i class="fa-solid fa-qrcode text-sm"></i>
+          <span class="hidden sm:inline">Scan to Sign</span>
+        </button>
+
+        <!-- Admin drawer toggle -->
+        <button onclick="toggleAdminPanel()" class="px-3 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 backdrop-blur-md text-xs font-semibold flex items-center gap-1.5 transition" title="Admin controls">
+          <i class="fa-solid fa-sliders"></i>
+          <span class="hidden sm:inline">Controls</span>
+        </button>
+
+        <!-- Fullscreen -->
+        <button onclick="toggleFullscreen()" class="px-3.5 py-2 rounded-xl bg-indigo-600/90 hover:bg-indigo-600 text-white border border-indigo-400/30 backdrop-blur-md text-xs font-semibold flex items-center gap-1.5 shadow-lg shadow-indigo-600/20 transition">
+          <i class="fa-solid fa-expand text-xs"></i>
+          <span class="hidden sm:inline">Fullscreen</span>
+        </button>
+
+        <!-- Laptop View return -->
+        <button onclick="switchView('laptop')" class="px-3 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 backdrop-blur-md text-xs font-medium transition" title="Switch back to laptop view">
+          <i class="fa-solid fa-laptop"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Admin Floating Control Drawer (Collapsible) -->
+    <div id="adminPanelModal" class="hidden absolute top-20 right-8 z-40 w-72 glass-panel rounded-2xl p-4 shadow-2xl border border-slate-700/80 pointer-events-auto transition-all">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-700/80 mb-3">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
+          <i class="fa-solid fa-toolbox text-cyan-400"></i>
+          <span>Exhibition Admin</span>
+        </h4>
+        <button onclick="toggleAdminPanel()" class="text-slate-400 hover:text-white text-xs">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div class="flex items-center justify-between">
+          <span class="text-slate-300">Pop Audio FX</span>
+          <button onclick="toggleSound()" id="adminSoundBtn" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">
+            <i class="fa-solid fa-volume-high mr-1" id="adminSoundIcon"></i> Enabled
+          </button>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-slate-300">Test Sample Guest</span>
+          <button onclick="spawnSampleGuest()" class="px-2.5 py-1 rounded-lg bg-cyan-900/50 hover:bg-cyan-800/60 text-cyan-300 border border-cyan-700/50">
+            + Add 1
+          </button>
+        </div>
+        <div class="pt-2 border-t border-slate-700/80">
+          <button onclick="requestPopAllBalloons()" class="w-full py-2 px-3 rounded-xl bg-rose-950/70 hover:bg-rose-900/80 border border-rose-700/60 text-rose-300 font-semibold transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-bomb text-xs"></i>
+            <span>Pop All Screen Balloons</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phone QR Code Modal -->
+    <div id="qrModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+      <div class="glass-panel border border-cyan-500/40 rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center shadow-2xl relative">
+        <button onclick="toggleQRModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-2">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
+        <div class="w-12 h-12 rounded-2xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 flex items-center justify-center mx-auto mb-3">
+          <i class="fa-solid fa-mobile-screen-button text-lg"></i>
+        </div>
+        <h3 class="text-xl font-bold text-white mb-1">Scan with Your Phone</h3>
+        <p class="text-xs text-slate-400 mb-5">Open your camera to launch the signature kiosk on your mobile device!</p>
+        
+        <div class="p-4 bg-white rounded-2xl inline-block shadow-lg mx-auto" id="qrContainer"></div>
+
+        <p class="text-[11px] text-slate-500 font-mono mt-4 break-all" id="qrUrlLabel">--</p>
+      </div>
+    </div>
+
+    <!-- Bottom Exhibition Info Bar -->
+    <footer class="absolute bottom-4 inset-x-0 mx-auto w-fit z-30 pointer-events-none px-6 py-2 rounded-full glass-panel text-xs text-slate-400 flex items-center gap-3 shadow-xl">
+      <span class="flex items-center gap-1.5 text-cyan-400 font-semibold">
+        <i class="fa-solid fa-hand-pointer text-xs"></i>
+        <span>Touch or Click any balloon to POP</span>
+      </span>
+      <span class="text-slate-600">•</span>
+      <span>No expiration timer — floating indefinitely</span>
+    </footer>
+
+    <!-- BALLOON STAGE (Physics floating playground) -->
+    <div id="balloonStage" class="relative w-full h-full z-10 overflow-hidden pointer-events-auto">
+      <!-- Dynamic Balloon nodes rendered here -->
+    </div>
+  </section>
+
+  <!-- Firebase Modular Imports -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { 
+      getFirestore, 
+      collection, 
+      doc, 
+      setDoc, 
+      updateDoc, 
+      onSnapshot 
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // Palette Configurations
+    const PALETTES = [
+      { id: 'cyan', name: 'Electric Cyan', bg: 'linear-gradient(135deg, #06b6d4, #0369a1)', border: '#38bdf8', glow: 'rgba(6, 182, 212, 0.45)' },
+      { id: 'ruby', name: 'Ruby Crimson', bg: 'linear-gradient(135deg, #f43f5e, #be123c)', border: '#fb7185', glow: 'rgba(244, 63, 94, 0.45)' },
+      { id: 'emerald', name: 'Emerald Jade', bg: 'linear-gradient(135deg, #10b981, #047857)', border: '#34d399', glow: 'rgba(16, 185, 129, 0.45)' },
+      { id: 'gold', name: 'Imperial Gold', bg: 'linear-gradient(135deg, #f59e0b, #b45309)', border: '#fbbf24', glow: 'rgba(245, 158, 11, 0.45)' },
+      { id: 'violet', name: 'Cosmic Violet', bg: 'linear-gradient(135deg, #8b5cf6, #5b21b6)', border: '#a78bfa', glow: 'rgba(139, 92, 246, 0.45)' },
+      { id: 'pink', name: 'Hot Magenta', bg: 'linear-gradient(135deg, #ec4899, #9d174d)', border: '#f472b6', glow: 'rgba(236, 72, 153, 0.45)' },
+    ];
+
+    let currentSelectedPalette = PALETTES[0];
+    let isSoundMuted = false;
+    let authUser = null;
+    let db = null;
+    let balloonsCollectionRef = null;
+    let activeBalloonsMap = new Map(); // id -> balloon document
+    let balloonInstancesMap = new Map(); // id -> FloatingBalloonEntity
+    let totalSignaturesCount = 0;
+
+    // Firebase Global config setup
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'exhibition-guestbook-default';
+    const rawFirebaseConfig = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
+    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+    /* Web Audio Sound Synthesizer */
+    class AudioEngine {
+      constructor() {
+        this.ctx = null;
+      }
+      init() {
+        if (!this.ctx) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioContextClass) this.ctx = new AudioContextClass();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+      playLaunch() {
+        if (isSoundMuted) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const t = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(320, t);
+          osc.frequency.exponentialRampToValueAtTime(880, t + 0.32);
+          gain.gain.setValueAtTime(0.3, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(t);
+          osc.stop(t + 0.36);
+        } catch (e) {}
+      }
+      playPop() {
+        if (isSoundMuted) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const t = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(420, t);
+          osc.frequency.exponentialRampToValueAtTime(45, t + 0.12);
+          gain.gain.setValueAtTime(0.7, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(t);
+          osc.stop(t + 0.16);
+        } catch (e) {}
+      }
+    }
+    const audioSynth = new AudioEngine();
+
+    /* Signature Pad Handler */
+    let sigCanvas, sigCtx;
+    let isDrawing = false;
+    let hasDrawnOnPad = false;
+    let currentStrokeWidth = 4;
+    const strokeColor = '#ffffff';
+
+    function initSignaturePad() {
+      sigCanvas = document.getElementById('kioskSignatureCanvas');
+      if (!sigCanvas) return;
+      sigCtx = sigCanvas.getContext('2d');
+      resizeSignaturePad();
+
+      const getPointerPos = (e) => {
+        const rect = sigCanvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return {
+          x: clientX - rect.left,
+          y: clientY - rect.top
+        };
+      };
+
+      const startDrawing = (e) => {
+        e.preventDefault();
+        audioSynth.init();
+        isDrawing = true;
+        const pos = getPointerPos(e);
+        sigCtx.beginPath();
+        sigCtx.moveTo(pos.x, pos.y);
+        sigCtx.lineCap = 'round';
+        sigCtx.lineJoin = 'round';
+        sigCtx.lineWidth = currentStrokeWidth;
+        sigCtx.strokeStyle = strokeColor;
+      };
+
+      const drawStroke = (e) => {
+        if (!isDrawing) return;
+        e.preventDefault();
+        const pos = getPointerPos(e);
+        sigCtx.lineTo(pos.x, pos.y);
+        sigCtx.stroke();
+        hasDrawnOnPad = true;
+      };
+
+      const stopDrawing = (e) => {
+        if (!isDrawing) return;
+        e.preventDefault();
+        isDrawing = false;
+      };
+
+      sigCanvas.addEventListener('mousedown', startDrawing);
+      sigCanvas.addEventListener('mousemove', drawStroke);
+      window.addEventListener('mouseup', stopDrawing);
+
+      sigCanvas.addEventListener('touchstart', startDrawing, { passive: false });
+      sigCanvas.addEventListener('touchmove', drawStroke, { passive: false });
+      window.addEventListener('touchend', stopDrawing);
+    }
+
+    function resizeSignaturePad() {
+      if (!sigCanvas || !sigCtx) return;
+      const rect = sigCanvas.parentElement.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      sigCanvas.width = rect.width * dpr;
+      sigCanvas.height = rect.height * dpr;
+      sigCtx.scale(dpr, dpr);
+      clearSignatureCanvas();
+    }
+
+    window.clearSignatureCanvas = function() {
+      if (!sigCanvas || !sigCtx) return;
+      sigCtx.save();
+      sigCtx.setTransform(1, 0, 0, 1, 0, 0);
+      sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+      sigCtx.restore();
+      hasDrawnOnPad = false;
+    };
+
+    window.setStrokeWidth = function(width, btnElement) {
+      currentStrokeWidth = width;
+      document.querySelectorAll('.stroke-btn').forEach(b => {
+        b.className = 'stroke-btn px-2 py-0.5 rounded text-[11px] font-medium text-slate-400 hover:text-white transition';
+      });
+      if (btnElement) {
+        btnElement.className = 'stroke-btn px-2 py-0.5 rounded text-[11px] font-bold text-cyan-400 bg-slate-800 transition';
+      }
+    };
+
+    function renderColorPalettePicker() {
+      const container = document.getElementById('balloonColorGrid');
+      if (!container) return;
+      container.innerHTML = '';
+
+      PALETTES.forEach((palette, idx) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.title = palette.name;
+        btn.className = `h-10 rounded-xl border-2 transition-all transform ${idx === 0 ? 'border-white scale-105 ring-2 ring-cyan-400/50' : 'border-transparent opacity-80 hover:opacity-100 hover:scale-102'}`;
+        btn.style.background = palette.bg;
+
+        btn.onclick = () => {
+          currentSelectedPalette = palette;
+          Array.from(container.children).forEach(b => {
+            b.className = 'h-10 rounded-xl border-2 border-transparent opacity-80 hover:opacity-100 hover:scale-102 transition-all';
+          });
+          btn.className = 'h-10 rounded-xl border-2 border-white scale-105 ring-2 ring-cyan-400/50 transition-all';
+        };
+
+        container.appendChild(btn);
+      });
+    }
+
+    /* Cloud Initialization & Real-Time Sync */
+    async function initCloudFirestore() {
+      const statusDot = document.getElementById('cloudStatusDot');
+      const statusText = document.getElementById('cloudStatusText');
+
+      if (!rawFirebaseConfig) {
+        // Fallback for standalone demo / offline mode
+        if (statusText) statusText.textContent = 'Local Mode';
+        if (statusDot) statusDot.className = 'w-2 h-2 rounded-full bg-cyan-400';
+        setupLocalFallbackStorage();
+        return;
+      }
+
+      try {
+        const firebaseConfig = JSON.parse(rawFirebaseConfig);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        db = getFirestore(app);
+
+        // Strict Rule: Sign in first before queries
+        if (initialAuthToken) {
+          await signInWithCustomToken(auth, initialAuthToken);
+        } else {
+          await signInAnonymously(auth);
+        }
+
+        authUser = auth.currentUser;
+        if (!authUser) {
+          throw new Error('Authentication failed');
+        }
+
+        if (statusText) statusText.textContent = 'Cloud Connected';
+        if (statusDot) statusDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+
+        // Strict Rule 1: Public path `/artifacts/{appId}/public/data/{collectionName}`
+        balloonsCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'balloons');
+
+        // Real-time snapshot sync: No complex queries (filter in memory)
+        onSnapshot(balloonsCollectionRef, (snapshot) => {
+          const remoteMap = new Map();
+          let totalCount = snapshot.size;
+
+          snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            const id = docSnap.id;
+            // Only include balloons that have NOT been popped
+            if (!data.popped) {
+              remoteMap.set(id, { id, ...data });
+            }
+          });
+
+          handleBalloonsStateUpdate(remoteMap, totalCount);
+        }, (error) => {
+          console.error("Firestore onSnapshot error:", error);
+          if (statusText) statusText.textContent = 'Cloud Sync Warning';
+        });
+
+      } catch (err) {
+        console.warn("Using offline localStorage fallback:", err);
+        if (statusText) statusText.textContent = 'Local Standalone';
+        setupLocalFallbackStorage();
+      }
+    }
+
+    /* Fallback for environments without Firebase tokens */
+    function setupLocalFallbackStorage() {
+      const STORAGE_KEY = 'exhibition_public_balloons_store';
+      const readLocal = () => {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          return raw ? JSON.parse(raw) : [];
+        } catch (e) {
+          return [];
+        }
+      };
+
+      const sync = () => {
+        const list = readLocal();
+        const map = new Map();
+        list.forEach(b => {
+          if (!b.popped) map.set(b.id, b);
+        });
+        handleBalloonsStateUpdate(map, list.length);
+      };
+
+      window.addEventListener('storage', sync);
+      sync();
+
+      // Implement simulated cloud write methods
+      window.localStoreFallback = {
+        add: (item) => {
+          const list = readLocal();
+          list.push(item);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+          sync();
+        },
+        pop: (id) => {
+          const list = readLocal();
+          const target = list.find(b => b.id === id);
+          if (target) target.popped = true;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+          sync();
+        },
+        clearAll: () => {
+          const list = readLocal().map(b => ({ ...b, popped: true }));
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+          sync();
+        }
+      };
+    }
+
+    function handleBalloonsStateUpdate(newActiveMap, totalWelcomed) {
+      activeBalloonsMap = newActiveMap;
+      totalSignaturesCount = Math.max(totalSignaturesCount, totalWelcomed || activeBalloonsMap.size);
+      updateCountersHUD();
+
+      if (!isCurrentViewDisplay()) return;
+
+      // 1. Remove balloons that were popped remotely
+      balloonInstancesMap.forEach((instance, id) => {
+        if (!activeBalloonsMap.has(id)) {
+          triggerLocalBalloonBurst(id);
+        }
+      });
+
+      // 2. Add new incoming balloons
+      activeBalloonsMap.forEach((balloonData, id) => {
+        if (!balloonInstancesMap.has(id)) {
+          spawnBalloonOnStage(balloonData, true);
+        }
+      });
+    }
+
+    function generateCursiveFallbackSignature(name) {
+      const offCanvas = document.createElement('canvas');
+      offCanvas.width = 440;
+      offCanvas.height = 140;
+      const ctx = offCanvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'italic 52px "Space Grotesk", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(name, 220, 70);
+      return offCanvas.toDataURL('image/png');
+    }
+
+    window.handleFormSubmission = async function(e) {
+      e.preventDefault();
+      audioSynth.init();
+
+      const nameInput = document.getElementById('guestName');
+      const affiliationInput = document.getElementById('guestAffiliation');
+      const name = nameInput.value.trim();
+      const affiliation = affiliationInput.value.trim();
+
+      if (!name) return;
+
+      let signatureDataUrl = '';
+      if (hasDrawnOnPad) {
+        signatureDataUrl = sigCanvas.toDataURL('image/png');
+      } else {
+        signatureDataUrl = generateCursiveFallbackSignature(name);
+      }
+
+      const balloonId = 'b_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+      const balloonPayload = {
+        id: balloonId,
+        name: name,
+        affiliation: affiliation,
+        signatureUrl: signatureDataUrl,
+        palette: currentSelectedPalette,
+        createdAt: Date.now(),
+        popped: false
+      };
+
+      try {
+        if (db && balloonsCollectionRef) {
+          const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'balloons', balloonId);
+          await setDoc(docRef, balloonPayload);
+        } else if (window.localStoreFallback) {
+          window.localStoreFallback.add(balloonPayload);
+        }
+      } catch (err) {
+        console.error("Error saving balloon:", err);
+      }
+
+      audioSynth.playLaunch();
+      showKioskSuccessCard(name);
+
+      nameInput.value = '';
+      affiliationInput.value = '';
+      clearSignatureCanvas();
+    };
+
+    function showKioskSuccessCard(guestName) {
+      const overlay = document.getElementById('kioskSuccessOverlay');
+      const card = document.getElementById('kioskSuccessCard');
+      const nameEl = document.getElementById('successGuestName');
+      const countdownEl = document.getElementById('countdownSecText');
+      const barEl = document.getElementById('resetCountdownBar');
+
+      if (nameEl) nameEl.textContent = guestName;
+      if (countdownEl) countdownEl.textContent = '3';
+      if (barEl) {
+        barEl.style.transition = 'none';
+        barEl.style.width = '100%';
+        setTimeout(() => {
+          barEl.style.transition = 'width 2.8s linear';
+          barEl.style.width = '0%';
+        }, 30);
+      }
+
+      overlay.classList.remove('hidden');
+      setTimeout(() => {
+        overlay.classList.remove('opacity-0');
+        card.classList.remove('scale-95');
+        card.classList.add('scale-100');
+      }, 10);
+
+      let timeLeft = 3;
+      const interval = setInterval(() => {
+        timeLeft--;
+        if (countdownEl) countdownEl.textContent = timeLeft;
+        if (timeLeft <= 0) {
+          clearInterval(interval);
+          overlay.classList.add('opacity-0');
+          card.classList.add('scale-95');
+          setTimeout(() => {
+            overlay.classList.add('hidden');
+          }, 300);
+        }
+      }, 950);
+    }
+
+    class FloatingBalloonEntity {
+      constructor(data, startFromBottom = false) {
+        this.data = data;
+        this.id = data.id;
+        const stage = document.getElementById('balloonStage');
+        this.bounds = {
+          w: stage ? stage.clientWidth : window.innerWidth,
+          h: stage ? stage.clientHeight : window.innerHeight
+        };
+
+        this.width = Math.min(270, Math.max(210, this.bounds.w * 0.17));
+        this.height = this.width * 1.34;
+
+        if (startFromBottom) {
+          this.x = Math.random() * (this.bounds.w - this.width - 80) + 40;
+          this.y = this.bounds.h + 20;
+        } else {
+          this.x = Math.random() * (this.bounds.w - this.width - 80) + 40;
+          this.y = Math.random() * (this.bounds.h - this.height - 180) + 90;
+        }
+
+        this.vx = (Math.random() - 0.5) * 0.65;
+        this.vy = -(0.35 + Math.random() * 0.45);
+        this.angle = (Math.random() - 0.5) * 5;
+        this.vAngle = (Math.random() - 0.5) * 0.03;
+        this.wave = Math.random() * Math.PI * 2;
+        this.isPopping = false;
+
+        this.dom = this.renderDOM();
+      }
+
+      renderDOM() {
+        const pal = this.data.palette || PALETTES[0];
+        const card = document.createElement('div');
+        card.id = `balloon_node_${this.id}`;
+        card.className = 'absolute cursor-pointer transition-transform duration-75 select-none will-change-transform';
+        card.style.width = `${this.width}px`;
+        card.style.transform = `translate3d(${this.x}px, ${this.y}px, 0px) rotate(${this.angle}deg)`;
+
+        card.innerHTML = `
+          <div class="balloon-body p-5 border-2 shadow-2xl flex flex-col justify-between items-center text-center backdrop-blur-md"
+               style="background: ${pal.bg}; border-color: ${pal.border}; box-shadow: 0 20px 45px -10px ${pal.glow}, 0 0 20px ${pal.glow}; min-height: ${this.height}px;">
+            
+            <div class="balloon-sheen"></div>
+
+            <!-- Top Header on Balloon -->
+            <div class="w-full flex items-center justify-between z-10">
+              <span class="text-[10px] uppercase font-mono tracking-wider font-black px-2.5 py-0.5 rounded-full bg-black/30 text-white/95 border border-white/20">
+                Attendee
+              </span>
+              <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-black/30 text-cyan-300 border border-cyan-400/30 flex items-center gap-1">
+                <i class="fa-solid fa-infinity text-[9px]"></i> Active
+              </span>
+            </div>
+
+            <!-- Hand Signature & Name Display -->
+            <div class="my-auto w-full z-10 flex flex-col items-center justify-center px-1 py-1">
+              <div class="w-full max-h-24 py-1 flex items-center justify-center">
+                <img src="${this.data.signatureUrl}" alt="Signature" class="max-h-20 max-w-[94%] object-contain filter drop-shadow-[0_2px_6px_rgba(0,0,0,0.65)] pointer-events-none" />
+              </div>
+              
+              <div class="w-4/5 border-b border-white/30 my-1.5"></div>
+              
+              <h3 class="font-extrabold text-white text-base tracking-wide drop-shadow-md truncate w-full px-2">
+                ${escapeHtml(this.data.name)}
+              </h3>
+
+              ${this.data.affiliation ? `<p class="text-[11px] text-white/85 font-medium italic truncate max-w-full px-2 mt-0.5">${escapeHtml(this.data.affiliation)}</p>` : ''}
+            </div>
+
+            <!-- Knot & String -->
+            <div class="balloon-knot" style="background: ${pal.border};"></div>
+            <div class="balloon-string-line"></div>
+          </div>
+        `;
+
+        // Interactive Popping on click/tap
+        card.addEventListener('click', (e) => {
+          e.stopPropagation();
+          popBalloonAction(this.id);
+        });
+
+        return card;
+      }
+
+      update(bounds) {
+        if (this.isPopping) return;
+
+        this.bounds = bounds;
+        this.wave += 0.035;
+
+        const sway = Math.sin(this.wave) * 0.45;
+        this.x += this.vx + sway;
+        this.y += this.vy;
+        this.angle += this.vAngle;
+
+        // Bouncing inside canvas bounds
+        if (this.x < 15) {
+          this.x = 15;
+          this.vx = Math.abs(this.vx) * 0.8;
+        } else if (this.x + this.width > this.bounds.w - 15) {
+          this.x = this.bounds.w - this.width - 15;
+          this.vx = -Math.abs(this.vx) * 0.8;
+        }
+
+        if (this.y < 85) {
+          this.y = 85;
+          this.vy = Math.abs(this.vy) * 0.6;
+        } else if (this.y + this.height > this.bounds.h - 40) {
+          this.y = this.bounds.h - this.height - 40;
+          this.vy = -Math.abs(this.vy) * 0.6;
+        }
+
+        this.dom.style.transform = `translate3d(${this.x.toFixed(1)}px, ${this.y.toFixed(1)}px, 0px) rotate(${this.angle.toFixed(1)}deg)`;
+      }
+    }
+
+    function spawnBalloonOnStage(balloonData, startFromBottom = false) {
+      if (balloonInstancesMap.has(balloonData.id)) return;
+      const stage = document.getElementById('balloonStage');
+      if (!stage) return;
+
+      const entity = new FloatingBalloonEntity(balloonData, startFromBottom);
+      balloonInstancesMap.set(balloonData.id, entity);
+      stage.appendChild(entity.dom);
+    }
+
+    async function popBalloonAction(balloonId) {
+      triggerLocalBalloonBurst(balloonId);
+
+      // Cloud mark as popped
+      try {
+        if (db && balloonsCollectionRef) {
+          const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'balloons', balloonId);
+          await updateDoc(docRef, { popped: true });
+        } else if (window.localStoreFallback) {
+          window.localStoreFallback.pop(balloonId);
+        }
+      } catch (err) {
+        console.error("Error popping balloon in cloud:", err);
+      }
+    }
+
+    function triggerLocalBalloonBurst(balloonId) {
+      const entity = balloonInstancesMap.get(balloonId);
+      if (!entity || entity.isPopping) return;
+
+      entity.isPopping = true;
+      audioSynth.playPop();
+
+      // Confetti burst
+      const rect = entity.dom.getBoundingClientRect();
+      const originX = (rect.left + rect.width / 2) / window.innerWidth;
+      const originY = (rect.top + rect.height / 2) / window.innerHeight;
+      triggerConfettiExplosion(originX, originY, entity.data.palette);
+
+      entity.dom.classList.add('animate-shaking-pop');
+
+      setTimeout(() => {
+        if (entity.dom && entity.dom.parentNode) {
+          entity.dom.parentNode.removeChild(entity.dom);
+        }
+        balloonInstancesMap.delete(balloonId);
+        activeBalloonsMap.delete(balloonId);
+        updateCountersHUD();
+      }, 620);
+    }
+
+    function triggerConfettiExplosion(x, y, palette) {
+      if (typeof confetti !== 'function') return;
+      const colors = palette ? [palette.border, '#ffffff', '#fde047', '#38bdf8'] : ['#38bdf8', '#f43f5e', '#ffffff'];
+      confetti({
+        particleCount: 50,
+        spread: 80,
+        origin: { x, y },
+        colors: colors,
+        startVelocity: 30,
+        gravity: 0.95,
+        ticks: 120
+      });
+    }
+
+    let cosmicCanvas, cosmicCtx;
+    let particles = [];
+
+    function initCosmicCanvas() {
+      cosmicCanvas = document.getElementById('displayCosmicCanvas');
+      if (!cosmicCanvas) return;
+      cosmicCtx = cosmicCanvas.getContext('2d');
+      resizeCosmicCanvas();
+
+      particles = [];
+      const count = Math.min(80, Math.floor(window.innerWidth / 20));
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x: Math.random() * cosmicCanvas.width,
+          y: Math.random() * cosmicCanvas.height,
+          radius: Math.random() * 1.6 + 0.4,
+          alpha: Math.random() * 0.7 + 0.2,
+          speedY: -(Math.random() * 0.35 + 0.1),
+          speedX: (Math.random() - 0.5) * 0.2
+        });
+      }
+
+      function drawCosmic() {
+        if (isCurrentViewDisplay() && cosmicCtx) {
+          cosmicCtx.clearRect(0, 0, cosmicCanvas.width, cosmicCanvas.height);
+          particles.forEach(p => {
+            p.y += p.speedY;
+            p.x += p.speedX;
+            if (p.y < 0) p.y = cosmicCanvas.height;
+            if (p.x < 0) p.x = cosmicCanvas.width;
+            if (p.x > cosmicCanvas.width) p.x = 0;
+
+            cosmicCtx.beginPath();
+            cosmicCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            cosmicCtx.fillStyle = `rgba(224, 242, 254, ${p.alpha})`;
+            cosmicCtx.fill();
+          });
+        }
+        requestAnimationFrame(drawCosmic);
+      }
+      requestAnimationFrame(drawCosmic);
+    }
+
+    function resizeCosmicCanvas() {
+      if (!cosmicCanvas) return;
+      cosmicCanvas.width = window.innerWidth;
+      cosmicCanvas.height = window.innerHeight;
+    }
+
+    function startPhysicsLoop() {
+      const stage = document.getElementById('balloonStage');
+      function tick() {
+        if (isCurrentViewDisplay() && stage) {
+          const bounds = {
+            w: stage.clientWidth || window.innerWidth,
+            h: stage.clientHeight || window.innerHeight
+          };
+          balloonInstancesMap.forEach(balloon => {
+            balloon.update(bounds);
+          });
+        }
+        requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    }
+
+    function isCurrentViewDisplay() {
+      const displayScreen = document.getElementById('bigDisplayScreen');
+      return displayScreen && !displayScreen.classList.contains('hidden');
+    }
+
+    window.switchView = function(viewName) {
+      const laptopScreen = document.getElementById('laptopKioskScreen');
+      const displayScreen = document.getElementById('bigDisplayScreen');
+
+      if (viewName === 'display') {
+        laptopScreen.classList.add('hidden');
+        displayScreen.classList.remove('hidden');
+        window.location.hash = 'display';
+        resizeCosmicCanvas();
+        // Render all currently active balloons onto stage
+        activeBalloonsMap.forEach((data, id) => {
+          if (!balloonInstancesMap.has(id)) {
+            spawnBalloonOnStage(data, false);
+          }
+        });
+      } else {
+        displayScreen.classList.add('hidden');
+        laptopScreen.classList.remove('hidden');
+        window.location.hash = 'laptop';
+        setTimeout(resizeSignaturePad, 60);
+      }
+    };
+
+    window.launchBigDisplayWindow = function() {
+      const targetUrl = window.location.origin + window.location.pathname + '#display';
+      window.open(targetUrl, 'ExhibitionBigDisplayWall', 'width=1920,height=1080,menubar=no,toolbar=no,location=no');
+    };
+
+    window.toggleFullscreen = function() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    };
+
+    window.toggleSound = function() {
+      audioSynth.init();
+      isSoundMuted = !isSoundMuted;
+      const adminSoundIcon = document.getElementById('adminSoundIcon');
+      const adminSoundBtn = document.getElementById('adminSoundBtn');
+      if (adminSoundIcon && adminSoundBtn) {
+        adminSoundIcon.className = isSoundMuted ? 'fa-solid fa-volume-xmark mr-1' : 'fa-solid fa-volume-high mr-1';
+        adminSoundBtn.innerHTML = `<i class="${adminSoundIcon.className}"></i> ${isSoundMuted ? 'Muted' : 'Enabled'}`;
+      }
+    };
+
+    window.toggleAdminPanel = function() {
+      const p = document.getElementById('adminPanelModal');
+      if (p) p.classList.toggle('hidden');
+    };
+
+    window.toggleQRModal = function() {
+      const m = document.getElementById('qrModal');
+      if (!m) return;
+      m.classList.toggle('hidden');
+      if (!m.classList.contains('hidden')) {
+        renderQRCode();
+      }
+    };
+
+    function renderQRCode() {
+      const container = document.getElementById('qrContainer');
+      const label = document.getElementById('qrUrlLabel');
+      if (!container) return;
+      container.innerHTML = '';
+
+      // Direct URL to the visitor kiosk
+      const kioskUrl = window.location.origin + window.location.pathname + '#laptop';
+      if (label) label.textContent = kioskUrl;
+
+      new QRCode(container, {
+        text: kioskUrl,
+        width: 180,
+        height: 180,
+        colorDark: "#030712",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    }
+
+    window.spawnSampleGuest = async function() {
+      const sampleNames = ['Dr. Elena Vance', 'Kenji Takahashi', 'Amina Al-Mansoor', 'Marcus Zhao', 'Liam O\'Connor'];
+      const sampleNotes = ['Quantum Labs • Tokyo', 'VR Research Fellow', 'Loved the Design Show', 'Robotics Architect', 'Visitor #108'];
+      const randName = sampleNames[Math.floor(Math.random() * sampleNames.length)];
+      const randNote = sampleNotes[Math.floor(Math.random() * sampleNotes.length)];
+      const randPalette = PALETTES[Math.floor(Math.random() * PALETTES.length)];
+
+      const sampleBalloon = {
+        id: 'b_sample_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+        name: randName,
+        affiliation: randNote,
+        signatureUrl: generateCursiveFallbackSignature(randName),
+        palette: randPalette,
+        createdAt: Date.now(),
+        popped: false
+      };
+
+      try {
+        if (db && balloonsCollectionRef) {
+          const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'balloons', sampleBalloon.id);
+          await setDoc(docRef, sampleBalloon);
+        } else if (window.localStoreFallback) {
+          window.localStoreFallback.add(sampleBalloon);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+      audioSynth.playLaunch();
+    };
+
+    window.requestPopAllBalloons = async function() {
+      if (balloonInstancesMap.size === 0) return;
+      toggleAdminPanel();
+
+      const idsToPop = Array.from(activeBalloonsMap.keys());
+      for (const id of idsToPop) {
+        await popBalloonAction(id);
+      }
+    };
+
+    function updateCountersHUD() {
+      const activeCount = activeBalloonsMap.size;
+      const wallCount = document.getElementById('wallActiveCount');
+      const totalCount = document.getElementById('wallTotalCount');
+
+      if (wallCount) wallCount.textContent = activeCount;
+      if (totalCount) totalCount.textContent = totalSignaturesCount;
+    }
+
+    function updateWallClock() {
+      const clockEl = document.getElementById('wallClockTime');
+      if (!clockEl) return;
+      const d = new Date();
+      clockEl.textContent = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    setInterval(updateWallClock, 1000);
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[m]);
+    }
+
+    window.addEventListener('load', async () => {
+      renderColorPalettePicker();
+      initSignaturePad();
+      initCosmicCanvas();
+      startPhysicsLoop();
+      updateWallClock();
+
+      await initCloudFirestore();
+
+      // Check URL route: #display opens the wall, otherwise kiosk
+      if (window.location.hash.toLowerCase().includes('display')) {
+        switchView('display');
+      } else {
+        switchView('laptop');
+      }
+
+      window.addEventListener('resize', () => {
+        if (!isCurrentViewDisplay()) {
+          resizeSignaturePad();
+        } else {
+          resizeCosmicCanvas();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
