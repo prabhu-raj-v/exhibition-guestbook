@@ -2,1625 +2,924 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Exhibition Guestbook • Secure Event Wall</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Exhibition Digital Guestbook</title>
   
-  <!-- Tailwind CSS -->
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Google Fonts: Space Grotesk & Outfit -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
-  <!-- Font Awesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  
-  <!-- Canvas Confetti -->
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
-
-  <!-- QRCode.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
-  <!-- MQTT.js for Zero-Config Realtime Cloud Sync over Public Secure WebSocket -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.5.0/mqtt.min.js"></script>
-
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Outfit', 'sans-serif'],
-            mono: ['Space Grotesk', 'monospace'],
-          },
-          animation: {
-            'shaking-pop': 'shakePop 0.65s cubic-bezier(.36,.07,.19,.97) both',
-          },
-          keyframes: {
-            shakePop: {
-              '0%': { transform: 'scale(1) translate(0, 0)' },
-              '20%': { transform: 'scale(1.15) translate(-4px, 3px)' },
-              '40%': { transform: 'scale(1.25) translate(4px, -3px)' },
-              '60%': { transform: 'scale(1.35) translate(-5px, 2px)' },
-              '80%': { transform: 'scale(1.5) translate(3px, -2px)' },
-              '100%': { transform: 'scale(0) opacity(0)' }
-            }
-          }
-        }
-      }
-    };
-  </script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Canvas Confetti CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+  <!-- MQTT.js for Realtime Multi-Device WebSockets -->
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <!-- jsPDF for Admin PDF Export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <style>
-    * {
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-      user-select: none;
-    }
-    input, textarea {
-      user-select: text;
-    }
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&family=Caveat:wght@600;700&display=swap');
+
     body {
-      background-color: #030712;
-      color: #f8fafc;
-      overflow: hidden;
+      font-family: 'Plus Jakarta Sans', sans-serif;
       touch-action: manipulation;
     }
 
-    .galaxy-bg {
-      background: radial-gradient(circle at 50% 20%, #1e1b4b 0%, #0f172a 45%, #030712 100%);
+    .font-signature {
+      font-family: 'Caveat', cursive;
     }
 
-    /* 3D Balloon styling */
-    .balloon-body {
-      border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
-      position: relative;
-      transform-origin: center bottom;
-      transition: filter 0.25s ease, transform 0.15s ease;
-      will-change: transform;
+    /* Ambient animated background for display */
+    .cosmic-bg {
+      background: radial-gradient(circle at 50% 20%, #1e1b4b 0%, #0f172a 45%, #020617 100%);
     }
 
-    .balloon-sheen {
+    /* Floating Balloon styling with realistic volume */
+    .balloon-wrapper {
       position: absolute;
-      top: 10%;
-      left: 14%;
-      width: 28%;
-      height: 22%;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0) 80%);
-      transform: rotate(-35deg);
-      pointer-events: none;
+      transform: translate(-50%, -50%);
+      will-change: transform, left, top;
+      cursor: pointer;
+      user-select: none;
+      transition: filter 0.2s ease;
+    }
+    
+    .balloon-wrapper:hover {
+      filter: drop-shadow(0 0 25px rgba(255,255,255,0.45));
+    }
+
+    .balloon-body {
+      position: relative;
+      border-radius: 50% 50% 50% 50% / 45% 45% 55% 55%;
+      box-shadow: inset 10px 10px 25px rgba(255, 255, 255, 0.4),
+                  inset -12px -15px 35px rgba(0, 0, 0, 0.5),
+                  0 20px 40px rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
     }
 
     .balloon-knot {
-      position: absolute;
-      bottom: -6px;
-      left: 50%;
-      transform: translateX(-50%);
       width: 14px;
-      height: 9px;
-      border-radius: 2px 2px 50% 50%;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+      height: 10px;
+      margin: -2px auto 0 auto;
+      border-radius: 3px 3px 6px 6px;
+      box-shadow: inset 0 -2px 5px rgba(0,0,0,0.4);
     }
 
-    .balloon-string-line {
-      position: absolute;
-      bottom: -46px;
-      left: 50%;
+    .balloon-string {
       width: 2px;
-      height: 46px;
-      background: linear-gradient(to bottom, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.1));
+      height: 60px;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.5), rgba(255,255,255,0.1));
+      margin: 0 auto;
       transform-origin: top center;
+      animation: stringSway 3s ease-in-out infinite alternate;
     }
 
-    .glass-panel {
-      background: rgba(15, 23, 42, 0.88);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      border: 1px solid rgba(255, 255, 255, 0.12);
+    @keyframes stringSway {
+      0% { transform: rotate(-5deg); }
+      100% { transform: rotate(5deg); }
+    }
+
+    .balloon-popping {
+      animation: balloonBurst 0.25s forwards cubic-bezier(0.1, 0.9, 0.2, 1);
+    }
+
+    @keyframes balloonBurst {
+      0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+      50% { transform: translate(-50%, -50%) scale(1.4); opacity: 0.8; }
+      100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
     }
   </style>
 </head>
-<body class="h-screen w-screen overflow-hidden text-slate-100 font-sans antialiased">
+<body class="bg-slate-950 text-slate-100 min-h-screen overflow-x-hidden selection:bg-indigo-500 selection:text-white">
 
-  <!-- ========================================================================= -->
-  <!-- SCREEN 1: LAPTOP & VISITOR KIOSK (Public Input Mode)                     -->
-  <!-- ========================================================================= -->
-  <section id="laptopKioskScreen" class="relative w-full h-full flex flex-col justify-between overflow-y-auto bg-slate-950 p-4 sm:p-6 lg:p-8">
-    <div class="fixed top-[-10%] right-[-5%] w-[420px] h-[420px] bg-cyan-600/10 rounded-full blur-[120px] pointer-events-none"></div>
-    <div class="fixed bottom-[-10%] left-[-5%] w-[420px] h-[420px] bg-purple-600/10 rounded-full blur-[120px] pointer-events-none"></div>
-
-    <!-- Top Header -->
-    <header class="w-full max-w-5xl mx-auto flex items-center justify-between pb-4 border-b border-slate-800/80 z-20">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 text-white font-bold">
-          <i class="fa-solid fa-signature text-base"></i>
+  <!-- ================= TOP GLOBAL NAVIGATION ================= -->
+  <header class="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-pink-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+          <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
         </div>
         <div>
-          <div class="flex items-center gap-2">
-            <h1 class="text-lg font-bold text-white tracking-tight">Exhibition Guestbook</h1>
-            <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 uppercase tracking-wider">Kiosk Terminal</span>
-          </div>
-          <p class="text-xs text-slate-400">Sign with finger/stylus to fly your balloon on the Main Wall Display</p>
+          <span class="font-bold text-lg tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">Exhibition Cloud Guestbook</span>
+          <span id="headerRoomLabel" class="ml-2 text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-indigo-400 border border-slate-700">Room: EXPO-2026</span>
         </div>
       </div>
 
-      <div class="flex items-center gap-2 sm:gap-3">
-        <!-- Room Badge -->
-        <button onclick="promptChangeRoomCode()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-cyan-500/40 text-xs text-slate-300 font-mono transition" title="Change target room code">
-          <i class="fa-solid fa-satellite-dish text-cyan-400 text-[11px]"></i>
-          <span>Room:</span>
-          <span id="kioskRoomLabel" class="font-bold text-white">EXPO-2026</span>
-          <i class="fa-solid fa-pen text-[10px] text-slate-500 ml-0.5"></i>
-        </button>
-
-        <!-- Cloud status -->
-        <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-400">
-          <span class="w-2 h-2 rounded-full bg-emerald-400" id="cloudStatusDot"></span>
-          <span id="cloudStatusText">Connecting Cloud...</span>
+      <!-- Sync Status & View Switcher -->
+      <div class="flex items-center space-x-3">
+        <!-- Live Connection Indicator -->
+        <div id="connBadge" class="hidden sm:flex items-center space-x-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-medium">
+          <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+          <span id="connStatusText">Connecting Cloud...</span>
         </div>
 
-        <!-- Go to Big Display View (requires PIN) -->
-        <button onclick="openDisplayWithAuth()" class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white text-xs font-semibold shadow-lg shadow-indigo-600/25 transition active:scale-95">
-          <i class="fa-solid fa-lock text-[10px]"></i>
-          <span>Display Screen</span>
+        <!-- Mode Buttons -->
+        <button id="btnSwitchLaptop" onclick="switchView('laptop')" class="px-3.5 py-1.5 rounded-lg text-sm font-semibold transition bg-indigo-600 text-white shadow-md shadow-indigo-600/30">
+          <i data-lucide="pen-tool" class="w-4 h-4 inline mr-1"></i> Kiosk Mode
+        </button>
+        <button id="btnSwitchDisplay" onclick="switchView('display')" class="px-3.5 py-1.5 rounded-lg text-sm font-semibold transition text-slate-300 hover:bg-slate-800">
+          <i data-lucide="projector" class="w-4 h-4 inline mr-1"></i> Big Display
         </button>
       </div>
-    </header>
+    </div>
+  </header>
 
-    <!-- Kiosk Input Body -->
-    <main class="w-full max-w-4xl mx-auto my-auto py-5 z-10">
-      <form id="kioskGuestForm" onsubmit="handleFormSubmission(event)" class="glass-panel rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col gap-6">
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- Left Column -->
-          <div class="flex flex-col justify-between space-y-4">
-            <div>
-              <label for="guestName" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
-                Your Full Name <span class="text-rose-400">*</span>
-              </label>
-              <div class="relative">
-                <i class="fa-regular fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                <input 
-                  type="text" 
-                  id="guestName" 
-                  name="guestName" 
-                  required 
-                  maxlength="32" 
-                  placeholder="e.g. Maya Lin"
-                  class="w-full bg-slate-950/80 border border-slate-700/80 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 rounded-2xl pl-10 pr-4 py-3 text-white placeholder-slate-500 text-sm font-medium outline-none transition"
-                  autocomplete="off"
-                >
-              </div>
-            </div>
+  <!-- ================= VIEW 1: LAPTOP KIOSK TERMINAL ================= -->
+  <main id="laptopView" class="max-w-3xl mx-auto px-4 py-8 sm:py-12">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden p-6 sm:p-8">
+      <div class="text-center max-w-lg mx-auto mb-6">
+        <h1 class="text-3xl font-extrabold text-white tracking-tight">Welcome to the Exhibition</h1>
+        <p class="text-slate-400 text-sm mt-1">Please enter your name & draw your signature to float your personal balloon on the big screen.</p>
+      </div>
 
-            <div>
-              <label for="guestAffiliation" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
-                Affiliation / City / Message <span class="text-slate-500 font-normal text-[11px]">(Optional)</span>
-              </label>
-              <div class="relative">
-                <i class="fa-regular fa-building absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                <input 
-                  type="text" 
-                  id="guestAffiliation" 
-                  name="guestAffiliation" 
-                  maxlength="45" 
-                  placeholder="e.g. Architect • Tokyo"
-                  class="w-full bg-slate-950/80 border border-slate-700/80 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 rounded-2xl pl-10 pr-4 py-3 text-white placeholder-slate-500 text-sm font-medium outline-none transition"
-                  autocomplete="off"
-                >
-              </div>
-            </div>
-
-            <!-- Balloon Color Selection -->
-            <div>
-              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
-                Select Balloon Color
-              </label>
-              <div id="balloonColorGrid" class="grid grid-cols-6 gap-2"></div>
-            </div>
-
-            <div class="p-3 bg-slate-950/60 rounded-2xl border border-slate-800 text-xs text-slate-400 flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <i class="fa-solid fa-cloud-bolt text-cyan-400 text-sm"></i>
-                <span>Zero-setup global cloud sync enabled</span>
-              </div>
-              <span id="kioskConnectionBadge" class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Online</span>
-            </div>
+      <form id="guestForm" onsubmit="handleFormSubmit(event)" class="space-y-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Your Full Name *</label>
+            <input type="text" id="guestName" required maxlength="36" placeholder="e.g. Elena Rostova" 
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
           </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Organization / Title (Optional)</label>
+            <input type="text" id="guestOrg" maxlength="40" placeholder="e.g. Design Lead @ Studio" 
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+          </div>
+        </div>
 
-          <!-- Right Column: Signature Pad -->
-          <div class="flex flex-col">
-            <div class="flex items-center justify-between mb-2">
-              <label class="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-                <i class="fa-solid fa-pen-fancy text-cyan-400"></i>
-                <span>Signature Pad <span class="text-rose-400">*</span></span>
-              </label>
+        <!-- Color Theme Selector -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Choose Balloon Color</label>
+          <div class="flex flex-wrap gap-3" id="colorPickerGroup">
+            <!-- Populated via JS -->
+          </div>
+        </div>
 
-              <div class="flex items-center gap-1">
-                <div class="bg-slate-950 p-1 rounded-xl border border-slate-800 flex items-center gap-1">
-                  <button type="button" onclick="setStrokeWidth(2, this)" class="stroke-btn px-2 py-0.5 rounded text-[11px] font-medium text-slate-400 hover:text-white transition">Thin</button>
-                  <button type="button" onclick="setStrokeWidth(4, this)" class="stroke-btn px-2 py-0.5 rounded text-[11px] font-bold text-cyan-400 bg-slate-800 transition">Med</button>
-                  <button type="button" onclick="setStrokeWidth(7, this)" class="stroke-btn px-2 py-0.5 rounded text-[11px] font-medium text-slate-400 hover:text-white transition">Bold</button>
-                </div>
-                <button type="button" onclick="clearSignatureCanvas()" class="px-2.5 py-1 rounded-xl bg-slate-950 hover:bg-rose-950/40 border border-slate-800 hover:border-rose-500/40 text-slate-400 hover:text-rose-400 text-xs font-medium transition flex items-center gap-1">
-                  <i class="fa-solid fa-eraser text-[10px]"></i>
-                  <span>Clear</span>
-                </button>
-              </div>
+        <!-- Signature Pad -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Your Digital Signature *</label>
+            <button type="button" onclick="clearSignaturePad()" class="text-xs text-rose-400 hover:text-rose-300 flex items-center space-x-1 py-0.5 px-2 rounded hover:bg-rose-950/30 transition">
+              <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+              <span>Clear Pad</span>
+            </button>
+          </div>
+          <div class="relative bg-slate-950 border border-slate-700 rounded-xl overflow-hidden shadow-inner">
+            <canvas id="signatureCanvas" class="w-full h-44 cursor-crosshair block touch-none"></canvas>
+            <div id="sigPlaceholder" class="absolute inset-0 flex items-center justify-center pointer-events-none text-slate-600 font-signature text-2xl select-none">
+              Sign here with finger, mouse, or stylus
             </div>
-
-            <!-- Drawing Area -->
-            <div class="relative w-full h-56 bg-slate-950 rounded-2xl border-2 border-dashed border-slate-700/80 hover:border-cyan-500/60 overflow-hidden shadow-inner transition group">
-              <canvas id="kioskSignatureCanvas" class="w-full h-full cursor-crosshair touch-none absolute inset-0 z-10"></canvas>
-              
-              <div class="absolute inset-x-6 bottom-6 border-b border-slate-800 pointer-events-none flex justify-between items-center text-[11px] text-slate-600 font-mono">
-                <span>Sign using stylus, fingertip, or mouse</span>
-                <i class="fa-solid fa-feather-pointed opacity-40"></i>
-              </div>
-            </div>
-            <p class="text-[11px] text-slate-500 mt-2">Drawn signature will be embedded directly in your room's balloon.</p>
           </div>
         </div>
 
         <!-- Submit Button -->
-        <button 
-          type="submit" 
-          id="btnSendBalloon"
-          class="relative w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-cyan-500 via-sky-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-slate-950 font-bold text-base shadow-xl shadow-cyan-500/25 active:scale-[0.99] transition-all flex items-center justify-center gap-2.5 cursor-pointer"
-        >
-          <i class="fa-solid fa-paper-plane text-slate-950"></i>
-          <span>Send to Event Display (<span id="btnRoomText">EXPO-2026</span>)</span>
-          <i class="fa-solid fa-arrow-right text-xs opacity-75"></i>
+        <button type="submit" id="btnSubmit" class="w-full py-4 rounded-xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 text-white font-bold text-lg shadow-lg shadow-indigo-500/25 transition transform active:scale-[0.99] flex items-center justify-center space-x-2">
+          <i data-lucide="send" class="w-5 h-5"></i>
+          <span>Send to Big Display Screen</span>
         </button>
       </form>
-    </main>
+    </div>
 
-    <!-- Footer -->
-    <footer class="w-full max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 pt-3 border-t border-slate-800/60 z-10 gap-2">
-      <div class="flex items-center gap-2">
-        <i class="fa-solid fa-network-wired text-cyan-400 text-[10px]"></i>
-        <span>Target Room: <strong class="text-slate-300 font-mono" id="footerRoomLabel">EXPO-2026</strong></span>
+    <!-- Success Feedback Notification -->
+    <div id="successNotice" class="hidden fixed bottom-6 right-6 max-w-sm bg-emerald-950 border border-emerald-700 text-emerald-200 px-5 py-4 rounded-xl shadow-2xl z-50 flex items-center space-x-3 animate-bounce">
+      <i data-lucide="check-circle-2" class="w-6 h-6 text-emerald-400 flex-shrink-0"></i>
+      <div>
+        <p class="font-bold text-sm">Sent to Exhibition Wall!</p>
+        <p class="text-xs text-emerald-300">Your balloon is now drifting in real time.</p>
       </div>
-      <div class="flex items-center gap-3">
-        <button onclick="spawnSampleGuest()" class="hover:text-slate-300 transition text-[11px]">Spawn Test Attendee</button>
-      </div>
-    </footer>
+    </div>
+  </main>
 
-    <!-- Kiosk Success Splash Overlay -->
-    <div id="kioskSuccessOverlay" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
-      <div class="bg-slate-900 border border-cyan-500/40 rounded-3xl p-8 max-w-sm w-full mx-4 text-center shadow-2xl shadow-cyan-500/20 transform scale-95 transition-transform duration-300" id="kioskSuccessCard">
-        <div class="w-16 h-16 rounded-3xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 flex items-center justify-center mx-auto mb-4">
-          <i class="fa-solid fa-check text-2xl"></i>
+  <!-- ================= VIEW 2: BIG DISPLAY WALL ================= -->
+  <section id="displayView" class="hidden relative w-full h-[calc(100vh-4rem)] cosmic-bg overflow-hidden select-none">
+    
+    <!-- Big Screen Header Info Overlay -->
+    <div class="absolute top-4 left-6 z-30 pointer-events-none flex items-center space-x-4">
+      <div class="bg-slate-900/60 backdrop-blur-md border border-slate-800 px-4 py-2 rounded-xl">
+        <h2 class="text-xs uppercase tracking-widest text-slate-400 font-bold">Active Visitors</h2>
+        <div class="flex items-center space-x-2 mt-0.5">
+          <span id="balloonCountDisplay" class="text-2xl font-black text-indigo-400">0</span>
+          <span class="text-xs text-slate-400">balloons floating</span>
         </div>
-        <h3 class="text-2xl font-black text-white tracking-tight mb-1">Uploaded!</h3>
-        <p class="text-sm text-slate-300 mb-6">
-          Thank you, <strong id="successGuestName" class="text-cyan-400">Guest</strong>! Your balloon has joined the Exhibition Big Display.
-        </p>
-        <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
-          <div id="resetCountdownBar" class="h-full bg-cyan-400" style="width: 100%;"></div>
-        </div>
-        <p class="text-[11px] text-slate-500 mt-2">Ready for the next attendee in <span id="countdownSecText">3</span>s...</p>
       </div>
+      <div class="bg-slate-900/60 backdrop-blur-md border border-slate-800 px-4 py-2 rounded-xl">
+        <h2 class="text-xs uppercase tracking-widest text-slate-400 font-bold">Total Recorded</h2>
+        <div class="flex items-center space-x-2 mt-0.5">
+          <span id="totalLedgerCountDisplay" class="text-2xl font-black text-pink-400">0</span>
+          <span class="text-xs text-slate-400">signed guests</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Right: Admin & Controls -->
+    <div class="absolute top-4 right-6 z-30 flex items-center space-x-3">
+      <button onclick="toggleAudio()" id="btnMute" class="p-2.5 rounded-xl bg-slate-900/70 border border-slate-800 hover:bg-slate-800 text-slate-300 transition shadow">
+        <i data-lucide="volume-2" id="muteIcon" class="w-5 h-5"></i>
+      </button>
+      <button onclick="toggleFullscreen()" class="p-2.5 rounded-xl bg-slate-900/70 border border-slate-800 hover:bg-slate-800 text-slate-300 transition shadow">
+        <i data-lucide="maximize" class="w-5 h-5"></i>
+      </button>
+      <button onclick="openAdminModal()" class="px-3.5 py-2 rounded-xl bg-indigo-600/80 hover:bg-indigo-600 border border-indigo-500/50 text-white font-semibold text-xs tracking-wide flex items-center space-x-1.5 shadow-lg transition">
+        <i data-lucide="shield" class="w-4 h-4"></i>
+        <span>Admin & PDF Export</span>
+      </button>
+    </div>
+
+    <!-- Floating Canvas Container for Balloons -->
+    <div id="balloonStage" class="relative w-full h-full overflow-hidden">
+      <!-- Balloons spawn here -->
     </div>
   </section>
 
-  <!-- ========================================================================= -->
-  <!-- PIN VERIFICATION MODAL (Prevents unauthorized public access)              -->
-  <!-- ========================================================================= -->
-  <div id="pinLockModal" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-lg flex items-center justify-center p-4">
-    <div class="glass-panel border border-slate-700 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative text-center">
-      <button onclick="closePinModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-2">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-
-      <div class="w-14 h-14 rounded-2xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center mx-auto mb-4">
-        <i class="fa-solid fa-shield-halved text-2xl"></i>
+  <!-- ================= ADMIN PIN & EXPORT MODAL ================= -->
+  <div id="adminModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-2xl shadow-2xl p-6 sm:p-8">
+      
+      <!-- Screen 1: PIN Authentication -->
+      <div id="adminPinScreen">
+        <div class="flex items-center space-x-3 mb-4">
+          <div class="p-3 bg-indigo-500/10 rounded-xl text-indigo-400 border border-indigo-500/20">
+            <i data-lucide="lock" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-white">Admin Security Access</h3>
+            <p class="text-xs text-slate-400">Enter event admin PIN (Default: 1234)</p>
+          </div>
+        </div>
+        <form onsubmit="verifyAdminPin(event)" class="space-y-4">
+          <input type="password" id="adminPinInput" maxlength="6" placeholder="Enter PIN" 
+            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-center text-2xl tracking-widest text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <div id="pinError" class="hidden text-rose-400 text-xs font-semibold text-center">Incorrect PIN. Try again.</div>
+          <div class="flex space-x-3">
+            <button type="button" onclick="closeAdminModal()" class="w-1/2 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-sm">Cancel</button>
+            <button type="submit" class="w-1/2 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm">Unlock</button>
+          </div>
+        </form>
       </div>
 
-      <h3 class="text-xl font-bold text-white mb-1">Authorized Display Screen</h3>
-      <p class="text-xs text-slate-400 mb-6">Enter the 4-digit Event Display PIN to unlock the big screen projection for this room.</p>
-
-      <div class="space-y-4">
-        <div>
-          <label class="block text-xs font-mono uppercase text-slate-400 text-left mb-1.5">Event Room Code</label>
-          <input 
-            type="text" 
-            id="pinModalRoomInput" 
-            value="EXPO-2026" 
-            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 font-mono text-cyan-300 font-bold uppercase tracking-wider text-center outline-none focus:border-cyan-400"
-          >
+      <!-- Screen 2: Admin Dashboard & PDF Generator -->
+      <div id="adminDashboardScreen" class="hidden space-y-6">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+          <div>
+            <h3 class="text-lg font-bold text-white">Event Administration</h3>
+            <p class="text-xs text-slate-400">Export guest records or manage the hall display</p>
+          </div>
+          <button onclick="closeAdminModal()" class="text-slate-400 hover:text-white">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
         </div>
 
-        <div>
-          <label class="block text-xs font-mono uppercase text-slate-400 text-left mb-1.5">Display 4-Digit PIN</label>
-          <input 
-            type="password" 
-            id="pinModalPassInput" 
-            maxlength="4" 
-            placeholder="••••" 
-            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 font-mono text-2xl text-white tracking-[0.5em] text-center outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20"
-          >
-          <p class="text-[11px] text-slate-500 text-left mt-1.5 flex items-center gap-1">
-            <i class="fa-solid fa-circle-info text-indigo-400"></i>
-            <span>Default Demo PIN is <strong>1234</strong></span>
-          </p>
+        <div class="bg-slate-950 rounded-xl border border-slate-800 p-4 space-y-2">
+          <div class="flex justify-between text-xs text-slate-400">
+            <span>Current Room Code:</span>
+            <span class="font-bold text-indigo-400" id="adminRoomCodeDisplay">EXPO-2026</span>
+          </div>
+          <div class="flex justify-between text-xs text-slate-400">
+            <span>Total Signatures In Ledger:</span>
+            <span class="font-bold text-pink-400" id="adminSignaturesCount">0</span>
+          </div>
         </div>
 
-        <p id="pinErrorMessage" class="text-xs text-rose-400 font-medium hidden">Incorrect PIN. Please re-enter the 4-digit code.</p>
+        <!-- Primary Action: Generate PDF -->
+        <div>
+          <button onclick="generateGuestbookPDF()" id="btnExportPDF" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm shadow-lg shadow-emerald-600/30 flex items-center justify-center space-x-2 transition">
+            <i data-lucide="file-down" class="w-5 h-5"></i>
+            <span>Export Official Guestbook (PDF)</span>
+          </button>
+          <p class="text-[11px] text-slate-400 text-center mt-1.5">Compiles all visitor names, dates, times, and signatures into a formal document.</p>
+        </div>
 
-        <button 
-          onclick="verifyPinAndEnterDisplay()" 
-          class="w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition active:scale-98"
-        >
-          Unlock & Launch Big Display
-        </button>
+        <!-- Secondary Admin Actions -->
+        <div class="grid grid-cols-2 gap-3 pt-2">
+          <button onclick="popAllBalloons()" class="py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-semibold text-xs border border-amber-500/20 flex items-center justify-center space-x-1.5">
+            <i data-lucide="sparkles" class="w-4 h-4"></i>
+            <span>Pop All On Screen</span>
+          </button>
+          <button onclick="clearLedgerConfirm()" class="py-2.5 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 font-semibold text-xs border border-rose-800/40 flex items-center justify-center space-x-1.5">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+            <span>Clear Stored Records</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- ========================================================================= -->
-  <!-- SCREEN 2: BIG DISPLAY WALL (Protected Projector View)                     -->
-  <!-- ========================================================================= -->
-  <section id="bigDisplayScreen" class="hidden relative w-full h-full galaxy-bg overflow-hidden select-none">
-    
-    <!-- Cosmic background canvas -->
-    <canvas id="displayCosmicCanvas" class="absolute inset-0 pointer-events-none z-0"></canvas>
-
-    <!-- Top Ambient Exhibition HUD -->
-    <header class="absolute top-0 inset-x-0 z-30 flex items-center justify-between px-6 sm:px-10 py-5 pointer-events-none bg-gradient-to-b from-slate-950/95 to-transparent">
-      <!-- Title & Event Room Code -->
-      <div class="flex items-center gap-3.5">
-        <div class="w-11 h-11 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 backdrop-blur-md flex items-center justify-center text-cyan-300 shadow-lg shadow-cyan-500/10">
-          <i class="fa-solid fa-shapes text-lg"></i>
-        </div>
-        <div>
-          <h2 class="text-xl sm:text-2xl font-black tracking-tight text-white uppercase font-mono flex items-center gap-2.5">
-            <span>Exhibition Wall</span>
-            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse inline-block"></span>
-          </h2>
-          <div class="flex items-center gap-2 mt-0.5">
-            <span class="text-xs font-mono px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 uppercase font-bold" id="displayRoomBadge">
-              Room: EXPO-2026
-            </span>
-            <span class="text-xs text-slate-400">• Touch or click balloons to pop</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Stats HUD -->
-      <div class="hidden md:flex items-center gap-6 px-6 py-2 rounded-2xl glass-panel shadow-2xl">
-        <div class="text-center">
-          <span class="block text-[10px] uppercase font-mono tracking-widest text-slate-400">On Display</span>
-          <span id="wallActiveCount" class="text-2xl font-black text-cyan-300 font-mono">0</span>
-        </div>
-        <div class="h-7 w-px bg-slate-700/60"></div>
-        <div class="text-center">
-          <span class="block text-[10px] uppercase font-mono tracking-widest text-slate-400">Total Signatures</span>
-          <span id="wallTotalCount" class="text-xl font-bold text-slate-200 font-mono">0</span>
-        </div>
-        <div class="h-7 w-px bg-slate-700/60"></div>
-        <div class="text-center">
-          <span class="block text-[10px] uppercase font-mono tracking-widest text-slate-400">Clock</span>
-          <span id="wallClockTime" class="text-base font-bold text-amber-300 font-mono">--:--</span>
-        </div>
-      </div>
-
-      <!-- Top Controls -->
-      <div class="flex items-center gap-2.5 pointer-events-auto">
-        <!-- QR Code for mobile visitors -->
-        <button onclick="toggleQRModal()" class="px-3.5 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-cyan-300 border border-cyan-500/30 backdrop-blur-md text-xs font-semibold flex items-center gap-2 shadow-lg transition" title="Show QR Code for Attendees">
-          <i class="fa-solid fa-qrcode text-sm"></i>
-          <span class="hidden sm:inline">QR Code to Sign</span>
-        </button>
-
-        <!-- Admin Settings -->
-        <button onclick="toggleAdminPanel()" class="px-3 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 backdrop-blur-md text-xs font-semibold flex items-center gap-1.5 transition" title="Exhibition controls">
-          <i class="fa-solid fa-sliders"></i>
-          <span class="hidden sm:inline">Admin</span>
-        </button>
-
-        <!-- Fullscreen -->
-        <button onclick="toggleFullscreen()" class="px-3.5 py-2 rounded-xl bg-indigo-600/90 hover:bg-indigo-600 text-white border border-indigo-400/30 backdrop-blur-md text-xs font-semibold flex items-center gap-1.5 shadow-lg shadow-indigo-600/20 transition">
-          <i class="fa-solid fa-expand text-xs"></i>
-          <span class="hidden sm:inline">Fullscreen</span>
-        </button>
-
-        <!-- Exit back to Laptop Kiosk -->
-        <button onclick="switchView('laptop')" class="px-3 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 backdrop-blur-md text-xs font-medium transition" title="Exit to Laptop Kiosk">
-          <i class="fa-solid fa-arrow-right-from-bracket"></i>
-        </button>
-      </div>
-    </header>
-
-    <!-- Admin Floating Control Drawer -->
-    <div id="adminPanelModal" class="hidden absolute top-20 right-8 z-40 w-72 glass-panel rounded-2xl p-4 shadow-2xl border border-slate-700/80 pointer-events-auto transition-all">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-700/80 mb-3">
-        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
-          <i class="fa-solid fa-toolbox text-cyan-400"></i>
-          <span>Exhibition Host Menu</span>
-        </h4>
-        <button onclick="toggleAdminPanel()" class="text-slate-400 hover:text-white text-xs">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-      <div class="space-y-3 text-xs">
-        <div class="flex items-center justify-between">
-          <span class="text-slate-300">Pop Audio FX</span>
-          <button onclick="toggleSound()" id="adminSoundBtn" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">
-            <i class="fa-solid fa-volume-high mr-1" id="adminSoundIcon"></i> Enabled
-          </button>
-        </div>
-        <div class="flex items-center justify-between">
-          <span class="text-slate-300">Change PIN Code</span>
-          <button onclick="promptChangePin()" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-slate-700 font-mono">
-            PIN: <span id="adminCurrentPinLabel">1234</span>
-          </button>
-        </div>
-        <div class="flex items-center justify-between">
-          <span class="text-slate-300">Test Attendee Balloon</span>
-          <button onclick="spawnSampleGuest()" class="px-2.5 py-1 rounded-lg bg-cyan-900/50 hover:bg-cyan-800/60 text-cyan-300 border border-cyan-700/50">
-            + Add 1
-          </button>
-        </div>
-        <div class="pt-2 border-t border-slate-700/80">
-          <button onclick="requestPopAllBalloons()" class="w-full py-2 px-3 rounded-xl bg-rose-950/70 hover:bg-rose-900/80 border border-rose-700/60 text-rose-300 font-semibold transition flex items-center justify-center gap-2">
-            <i class="fa-solid fa-bomb text-xs"></i>
-            <span>Clear / Pop All Balloons</span>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Mobile QR Code Modal -->
-    <div id="qrModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div class="glass-panel border border-cyan-500/40 rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center shadow-2xl relative">
-        <button onclick="toggleQRModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-2">
-          <i class="fa-solid fa-xmark text-base"></i>
-        </button>
-        <div class="w-12 h-12 rounded-2xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 flex items-center justify-center mx-auto mb-3">
-          <i class="fa-solid fa-mobile-screen-button text-lg"></i>
-        </div>
-        <h3 class="text-xl font-bold text-white mb-1">Scan & Sign</h3>
-        <p class="text-xs text-slate-400 mb-4">Open camera on your smartphone to submit your signature to <strong id="qrRoomCodeLabel" class="text-cyan-300 font-mono">EXPO-2026</strong>!</p>
-        
-        <div class="p-4 bg-white rounded-2xl inline-block shadow-lg mx-auto" id="qrContainer"></div>
-
-        <p class="text-[11px] text-slate-500 font-mono mt-4 break-all" id="qrUrlLabel">--</p>
-      </div>
-    </div>
-
-    <!-- Bottom info footer -->
-    <footer class="absolute bottom-4 inset-x-0 mx-auto w-fit z-30 pointer-events-none px-6 py-2 rounded-full glass-panel text-xs text-slate-400 flex items-center gap-3 shadow-xl">
-      <span class="flex items-center gap-1.5 text-cyan-400 font-semibold">
-        <i class="fa-solid fa-hand-pointer text-xs"></i>
-        <span>Tap any balloon to pop</span>
-      </span>
-      <span class="text-slate-600">•</span>
-      <span>No timer — balloons stay on screen</span>
-    </footer>
-
-    <!-- BALLOON STAGE -->
-    <div id="balloonStage" class="relative w-full h-full z-10 overflow-hidden pointer-events-auto"></div>
-  </section>
-
+  <!-- ================= APPLICATION LOGIC ================= -->
   <script>
-    // Palette Configurations
-    const PALETTES = [
-      { id: 'cyan', name: 'Electric Cyan', bg: 'linear-gradient(135deg, #06b6d4, #0369a1)', border: '#38bdf8', glow: 'rgba(6, 182, 212, 0.45)' },
-      { id: 'ruby', name: 'Ruby Crimson', bg: 'linear-gradient(135deg, #f43f5e, #be123c)', border: '#fb7185', glow: 'rgba(244, 63, 94, 0.45)' },
-      { id: 'emerald', name: 'Emerald Jade', bg: 'linear-gradient(135deg, #10b981, #047857)', border: '#34d399', glow: 'rgba(16, 185, 129, 0.45)' },
-      { id: 'gold', name: 'Imperial Gold', bg: 'linear-gradient(135deg, #f59e0b, #b45309)', border: '#fbbf24', glow: 'rgba(245, 158, 11, 0.45)' },
-      { id: 'violet', name: 'Cosmic Violet', bg: 'linear-gradient(135deg, #8b5cf6, #5b21b6)', border: '#a78bfa', glow: 'rgba(139, 92, 246, 0.45)' },
-      { id: 'pink', name: 'Hot Magenta', bg: 'linear-gradient(135deg, #ec4899, #9d174d)', border: '#f472b6', glow: 'rgba(236, 72, 153, 0.45)' },
-    ];
+    // --- Configuration & Constants ---
+    const APP_CONFIG = {
+      defaultRoom: 'EXPO-2026',
+      adminPin: '1234',
+      balloonColors: [
+        { name: 'Indigo Dream', bg: 'linear-gradient(135deg, #6366f1 0%, #4338ca 100%)', knot: '#3730a3', stroke: '#c7d2fe' },
+        { name: 'Sunset Pink', bg: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)', knot: '#9d174d', stroke: '#fbcfe8' },
+        { name: 'Emerald Glow', bg: 'linear-gradient(135deg, #10b981 0%, #047857 100%)', knot: '#065f46', stroke: '#a7f3d0' },
+        { name: 'Solar Amber', bg: 'linear-gradient(135deg, #f59e0b 0%, #b45309 100%)', knot: '#92400e', stroke: '#fde68a' },
+        { name: 'Cyan Sky', bg: 'linear-gradient(135deg, #06b6d4 0%, #0e7490 100%)', knot: '#155e75', stroke: '#a5f3fc' },
+        { name: 'Violet Neon', bg: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)', knot: '#5b21b6', stroke: '#ddd6fe' }
+      ]
+    };
 
-    let currentSelectedPalette = PALETTES[0];
-    let isSoundMuted = false;
-
-    // Room Code & PIN Protection Settings
-    let currentRoomCode = 'EXPO-2026';
-    let currentDisplayPin = '1234';
-    let isDisplayUnlocked = false;
-
-    // State Tracking
-    let activeBalloonsMap = new Map();
-    let balloonInstancesMap = new Map();
-    let totalSignaturesCount = 0;
-
-    // Client Identification & Local Storage
-    const clientId = 'guestbook_' + Math.random().toString(36).substring(2, 10);
-    const STORAGE_KEY_PREFIX = 'exhibit_balloons_v2_';
-
-    // MQTT Brokers with auto-fallback (Zero config, works out of the box anywhere)
-    const MQTT_BROKERS = [
-      'wss://broker.emqx.io:8084/mqtt',
-      'wss://broker.hivemq.com:8884/mqtt'
-    ];
-    let currentBrokerIndex = 0;
+    // --- State Variables ---
+    let currentRoom = APP_CONFIG.defaultRoom;
+    let selectedColorIndex = 0;
     let mqttClient = null;
+    let activeBalloons = []; // On-screen objects
+    let soundEnabled = true;
+    let audioCtx = null;
 
-    /* Web Audio Sound Synthesizer */
-    class AudioEngine {
-      constructor() {
-        this.ctx = null;
-      }
-      init() {
-        if (!this.ctx) {
-          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-          if (AudioContextClass) this.ctx = new AudioContextClass();
-        }
-        if (this.ctx && this.ctx.state === 'suspended') {
-          this.ctx.resume();
-        }
-      }
-      playLaunch() {
-        if (isSoundMuted) return;
-        this.init();
-        if (!this.ctx) return;
-        try {
-          const t = this.ctx.currentTime;
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(320, t);
-          osc.frequency.exponentialRampToValueAtTime(880, t + 0.32);
-          gain.gain.setValueAtTime(0.3, t);
-          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
-          osc.connect(gain);
-          gain.connect(this.ctx.destination);
-          osc.start(t);
-          osc.stop(t + 0.36);
-        } catch (e) {}
-      }
-      playPop() {
-        if (isSoundMuted) return;
-        this.init();
-        if (!this.ctx) return;
-        try {
-          const t = this.ctx.currentTime;
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(420, t);
-          osc.frequency.exponentialRampToValueAtTime(45, t + 0.12);
-          gain.gain.setValueAtTime(0.7, t);
-          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
-          osc.connect(gain);
-          gain.connect(this.ctx.destination);
-          osc.start(t);
-          osc.stop(t + 0.16);
-        } catch (e) {}
+    // --- Setup URL Room parameters ---
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('room')) {
+      currentRoom = urlParams.get('room').toUpperCase().trim();
+    }
+    document.getElementById('headerRoomLabel').innerText = `Room: ${currentRoom}`;
+
+    // --- Storage Keys for Permanent Ledger ---
+    const STORAGE_LEDGER_KEY = `guestbook_ledger_${currentRoom}`;
+
+    function getStoredLedger() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_LEDGER_KEY) || '[]');
+      } catch (e) {
+        return [];
       }
     }
-    const audioSynth = new AudioEngine();
 
-    /* Signature Drawing Canvas & Vector Path Capture */
-    let sigCanvas, sigCtx;
+    function saveToLedger(entry) {
+      const list = getStoredLedger();
+      // Avoid duplicate entries
+      if (!list.some(item => item.id === entry.id)) {
+        list.push(entry);
+        localStorage.setItem(STORAGE_LEDGER_KEY, JSON.stringify(list));
+      }
+      updateLedgerCounters();
+    }
+
+    function updateLedgerCounters() {
+      const list = getStoredLedger();
+      const count = list.length;
+      document.getElementById('totalLedgerCountDisplay').innerText = count;
+      document.getElementById('adminSignaturesCount').innerText = count;
+    }
+
+    // --- View Switching ---
+    function switchView(view) {
+      const laptopView = document.getElementById('laptopView');
+      const displayView = document.getElementById('displayView');
+      const btnLaptop = document.getElementById('btnSwitchLaptop');
+      const btnDisplay = document.getElementById('btnSwitchDisplay');
+
+      if (view === 'laptop') {
+        laptopView.classList.remove('hidden');
+        displayView.classList.add('hidden');
+        btnLaptop.className = 'px-3.5 py-1.5 rounded-lg text-sm font-semibold transition bg-indigo-600 text-white shadow-md shadow-indigo-600/30';
+        btnDisplay.className = 'px-3.5 py-1.5 rounded-lg text-sm font-semibold transition text-slate-300 hover:bg-slate-800';
+        resizeCanvas();
+      } else {
+        laptopView.classList.add('hidden');
+        displayView.classList.remove('hidden');
+        btnDisplay.className = 'px-3.5 py-1.5 rounded-lg text-sm font-semibold transition bg-indigo-600 text-white shadow-md shadow-indigo-600/30';
+        btnLaptop.className = 'px-3.5 py-1.5 rounded-lg text-sm font-semibold transition text-slate-300 hover:bg-slate-800';
+      }
+    }
+
+    // --- Color Picker Population ---
+    const colorGroup = document.getElementById('colorPickerGroup');
+    APP_CONFIG.balloonColors.forEach((color, idx) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = `w-9 h-9 rounded-full transition-transform border-2 ${idx === 0 ? 'border-white scale-110 shadow-lg' : 'border-transparent hover:scale-105'}`;
+      btn.style.background = color.bg;
+      btn.onclick = () => {
+        selectedColorIndex = idx;
+        document.querySelectorAll('#colorPickerGroup button').forEach((b, i) => {
+          b.className = `w-9 h-9 rounded-full transition-transform border-2 ${i === idx ? 'border-white scale-110 shadow-lg' : 'border-transparent hover:scale-105'}`;
+        });
+      };
+      colorGroup.appendChild(btn);
+    });
+
+    // --- Signature Pad Canvas (SVG Vector Capture) ---
+    const canvas = document.getElementById('signatureCanvas');
+    const ctx = canvas.getContext('2d');
     let isDrawing = false;
-    let hasDrawnOnPad = false;
-    let currentStrokeWidth = 4;
-    let signatureStrokes = []; // Stores vector lines for ultra-lightweight SVG transmission
+    let paths = []; // array of { points: [{x, y}] }
     let currentPath = [];
-    const strokeColor = '#ffffff';
 
-    function initSignaturePad() {
-      sigCanvas = document.getElementById('kioskSignatureCanvas');
-      if (!sigCanvas) return;
-      sigCtx = sigCanvas.getContext('2d');
-      resizeSignaturePad();
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width === 0) return;
+      canvas.width = rect.width * window.devicePixelRatio;
+      canvas.height = rect.height * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      redrawCanvas();
+    }
 
-      const getPointerPos = (e) => {
-        const rect = sigCanvas.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        return {
-          x: Math.round(clientX - rect.left),
-          y: Math.round(clientY - rect.top)
-        };
+    function redrawCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      ctx.clearRect(0, 0, rect.width, rect.height);
+      ctx.strokeStyle = '#f8fafc';
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      paths.forEach(p => {
+        if (p.points.length < 2) return;
+        ctx.beginPath();
+        ctx.moveTo(p.points[0].x, p.points[0].y);
+        for (let i = 1; i < p.points.length; i++) {
+          ctx.lineTo(p.points[i].x, p.points[i].y);
+        }
+        ctx.stroke();
+      });
+    }
+
+    function getCanvasCoordinates(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return {
+        x: clientX - rect.left,
+        y: clientY - rect.top
       };
-
-      const startDrawing = (e) => {
-        e.preventDefault();
-        audioSynth.init();
-        isDrawing = true;
-        const pos = getPointerPos(e);
-        currentPath = [{ x: pos.x, y: pos.y }];
-        sigCtx.beginPath();
-        sigCtx.moveTo(pos.x, pos.y);
-        sigCtx.lineCap = 'round';
-        sigCtx.lineJoin = 'round';
-        sigCtx.lineWidth = currentStrokeWidth;
-        sigCtx.strokeStyle = strokeColor;
-      };
-
-      const drawStroke = (e) => {
-        if (!isDrawing) return;
-        e.preventDefault();
-        const pos = getPointerPos(e);
-        currentPath.push({ x: pos.x, y: pos.y });
-        sigCtx.lineTo(pos.x, pos.y);
-        sigCtx.stroke();
-        hasDrawnOnPad = true;
-      };
-
-      const stopDrawing = (e) => {
-        if (!isDrawing) return;
-        e.preventDefault();
-        isDrawing = false;
-        if (currentPath.length > 0) {
-          signatureStrokes.push({
-            width: currentStrokeWidth,
-            points: currentPath
-          });
-          currentPath = [];
-        }
-      };
-
-      sigCanvas.addEventListener('mousedown', startDrawing);
-      sigCanvas.addEventListener('mousemove', drawStroke);
-      window.addEventListener('mouseup', stopDrawing);
-
-      sigCanvas.addEventListener('touchstart', startDrawing, { passive: false });
-      sigCanvas.addEventListener('touchmove', drawStroke, { passive: false });
-      window.addEventListener('touchend', stopDrawing);
     }
 
-    function resizeSignaturePad() {
-      if (!sigCanvas || !sigCtx) return;
-      const rect = sigCanvas.parentElement.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
-      sigCanvas.width = rect.width * dpr;
-      sigCanvas.height = rect.height * dpr;
-      sigCtx.scale(dpr, dpr);
-      redrawAllStrokes();
-    }
-
-    function redrawAllStrokes() {
-      if (!sigCanvas || !sigCtx) return;
-      sigCtx.save();
-      sigCtx.setTransform(1, 0, 0, 1, 0, 0);
-      sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
-      sigCtx.restore();
-
-      signatureStrokes.forEach(stroke => {
-        if (!stroke.points || stroke.points.length === 0) return;
-        sigCtx.beginPath();
-        sigCtx.lineWidth = stroke.width || 4;
-        sigCtx.strokeStyle = strokeColor;
-        sigCtx.lineCap = 'round';
-        sigCtx.lineJoin = 'round';
-        sigCtx.moveTo(stroke.points[0].x, stroke.points[0].y);
-        for (let i = 1; i < stroke.points.length; i++) {
-          sigCtx.lineTo(stroke.points[i].x, stroke.points[i].y);
-        }
-        sigCtx.stroke();
-      });
-    }
-
-    window.clearSignatureCanvas = function() {
-      if (!sigCanvas || !sigCtx) return;
-      sigCtx.save();
-      sigCtx.setTransform(1, 0, 0, 1, 0, 0);
-      sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
-      sigCtx.restore();
-      signatureStrokes = [];
-      currentPath = [];
-      hasDrawnOnPad = false;
-    };
-
-    window.setStrokeWidth = function(width, btnElement) {
-      currentStrokeWidth = width;
-      document.querySelectorAll('.stroke-btn').forEach(b => {
-        b.className = 'stroke-btn px-2 py-0.5 rounded text-[11px] font-medium text-slate-400 hover:text-white transition';
-      });
-      if (btnElement) {
-        btnElement.className = 'stroke-btn px-2 py-0.5 rounded text-[11px] font-bold text-cyan-400 bg-slate-800 transition';
-      }
-    };
-
-    // Compact SVG generator: ensures signature is tiny (<2KB) and transmits instantly over any network
-    function generateCleanSignatureSVG() {
-      if (!signatureStrokes || signatureStrokes.length === 0) return null;
-      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-      signatureStrokes.forEach(s => {
-        s.points.forEach(p => {
-          if (p.x < minX) minX = p.x;
-          if (p.y < minY) minY = p.y;
-          if (p.x > maxX) maxX = p.x;
-          if (p.y > maxY) maxY = p.y;
-        });
-      });
-      const padding = 15;
-      minX = Math.max(0, minX - padding);
-      minY = Math.max(0, minY - padding);
-      maxX = maxX + padding;
-      maxY = maxY + padding;
-      const width = Math.max(60, maxX - minX);
-      const height = Math.max(40, maxY - minY);
-
-      let pathsSvg = '';
-      signatureStrokes.forEach(s => {
-        if (!s.points || s.points.length === 0) return;
-        let d = `M ${(s.points[0].x - minX).toFixed(1)} ${(s.points[0].y - minY).toFixed(1)}`;
-        for (let i = 1; i < s.points.length; i++) {
-          d += ` L ${(s.points[i].x - minX).toFixed(1)} ${(s.points[i].y - minY).toFixed(1)}`;
-        }
-        pathsSvg += `<path d="${d}" fill="none" stroke="#ffffff" stroke-width="${s.width || 4}" stroke-linecap="round" stroke-linejoin="round"/>`;
-      });
-
-      const rawSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width.toFixed(1)} ${height.toFixed(1)}">${pathsSvg}</svg>`;
-      return 'data:image/svg+xml;utf8,' + encodeURIComponent(rawSvg);
-    }
-
-    function generateCursiveFallbackSignature(name) {
-      const offCanvas = document.createElement('canvas');
-      offCanvas.width = 440;
-      offCanvas.height = 140;
-      const ctx = offCanvas.getContext('2d');
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'italic 52px "Space Grotesk", sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(name, 220, 70);
-      return offCanvas.toDataURL('image/png');
-    }
-
-    function renderColorPalettePicker() {
-      const container = document.getElementById('balloonColorGrid');
-      if (!container) return;
-      container.innerHTML = '';
-
-      PALETTES.forEach((palette, idx) => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.title = palette.name;
-        btn.className = `h-10 rounded-xl border-2 transition-all transform ${idx === 0 ? 'border-white scale-105 ring-2 ring-cyan-400/50' : 'border-transparent opacity-80 hover:opacity-100 hover:scale-102'}`;
-        btn.style.background = palette.bg;
-
-        btn.onclick = () => {
-          currentSelectedPalette = palette;
-          Array.from(container.children).forEach(b => {
-            b.className = 'h-10 rounded-xl border-2 border-transparent opacity-80 hover:opacity-100 hover:scale-102 transition-all';
-          });
-          btn.className = 'h-10 rounded-xl border-2 border-white scale-105 ring-2 ring-cyan-400/50 transition-all';
-        };
-
-        container.appendChild(btn);
-      });
-    }
-
-    /* Zero-Configuration Cloud Realtime Sync Engine (MQTT over Secure WebSocket) */
-    function getRoomTopic(roomCode) {
-      const sanitized = (roomCode || 'EXPO-2026').trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '_');
-      return `exhibition_guestbook_v2/room/${sanitized}`;
-    }
-
-    function loadLocalRoomStorage() {
-      const key = STORAGE_KEY_PREFIX + currentRoomCode.toUpperCase();
-      try {
-        const saved = localStorage.getItem(key);
-        if (saved) {
-          const list = JSON.parse(saved);
-          const map = new Map();
-          list.forEach(item => {
-            if (!item.popped) map.set(item.id, item);
-          });
-          return map;
-        }
-      } catch (e) {}
-      return new Map();
-    }
-
-    function saveLocalRoomStorage(map) {
-      const key = STORAGE_KEY_PREFIX + currentRoomCode.toUpperCase();
-      try {
-        const array = Array.from(map.values());
-        localStorage.setItem(key, JSON.stringify(array));
-      } catch (e) {}
-    }
-
-    function setCloudStatusUI(status, message) {
-      const dot = document.getElementById('cloudStatusDot');
-      const text = document.getElementById('cloudStatusText');
-      const badge = document.getElementById('kioskConnectionBadge');
-
-      if (text) text.textContent = message;
-      if (dot) {
-        if (status === 'connected') dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
-        else if (status === 'connecting') dot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
-        else dot.className = 'w-2 h-2 rounded-full bg-rose-500';
-      }
-      if (badge) {
-        if (status === 'connected') {
-          badge.className = 'text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
-          badge.textContent = 'Cloud Connected';
-        } else if (status === 'connecting') {
-          badge.className = 'text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30';
-          badge.textContent = 'Reconnecting...';
-        } else {
-          badge.className = 'text-[10px] font-mono px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30';
-          badge.textContent = 'Offline (Local)';
-        }
-      }
-    }
-
-    function initCloudRealtime() {
-      if (typeof mqtt === 'undefined') {
-        console.warn('MQTT.js not loaded, running in local mode');
-        setCloudStatusUI('offline', 'Local Standalone');
-        return;
-      }
-
-      setCloudStatusUI('connecting', 'Connecting Cloud...');
-      const brokerUrl = MQTT_BROKERS[currentBrokerIndex];
-
-      try {
-        if (mqttClient) {
-          try { mqttClient.end(true); } catch (e) {}
-        }
-
-        mqttClient = mqtt.connect(brokerUrl, {
-          clientId: clientId,
-          clean: true,
-          connectTimeout: 7000,
-          reconnectPeriod: 3000,
-          keepalive: 45
-        });
-
-        mqttClient.on('connect', () => {
-          setCloudStatusUI('connected', 'Cloud Connected');
-          const topic = getRoomTopic(currentRoomCode);
-          mqttClient.subscribe(topic, { qos: 1 });
-
-          // Request sync state from any active Big Display
-          broadcastCloudMessage({
-            type: 'REQUEST_ROOM_SYNC',
-            sender: clientId,
-            roomCode: currentRoomCode
-          });
-        });
-
-        mqttClient.on('message', (topic, payload) => {
-          try {
-            const msg = JSON.parse(payload.toString());
-            handleIncomingRealtimeMessage(msg);
-          } catch (err) {
-            console.error('MQTT message parse error:', err);
-          }
-        });
-
-        mqttClient.on('error', (err) => {
-          console.warn('MQTT error on', brokerUrl, err);
-          setCloudStatusUI('offline', 'Switching Server...');
-          switchToFallbackBroker();
-        });
-
-        mqttClient.on('offline', () => {
-          setCloudStatusUI('connecting', 'Reconnecting...');
-        });
-
-      } catch (err) {
-        console.error('Init MQTT error:', err);
-        switchToFallbackBroker();
-      }
-    }
-
-    function switchToFallbackBroker() {
-      currentBrokerIndex = (currentBrokerIndex + 1) % MQTT_BROKERS.length;
-      setTimeout(initCloudRealtime, 2000);
-    }
-
-    function broadcastCloudMessage(messageObj) {
-      if (!messageObj) return;
-      messageObj.timestamp = Date.now();
-      messageObj.roomCode = currentRoomCode.toUpperCase();
-
-      // Inter-tab / local window sync via BroadcastChannel
-      if (window.broadcastChan) {
-        try { window.broadcastChan.postMessage(messageObj); } catch (e) {}
-      }
-
-      // Global sync across all devices via MQTT
-      if (mqttClient && mqttClient.connected) {
-        const topic = getRoomTopic(currentRoomCode);
-        mqttClient.publish(topic, JSON.stringify(messageObj), { qos: 1 }, (err) => {
-          if (err) console.error('Cloud publish error:', err);
-        });
-      }
-    }
-
-    // Process real-time messages from any device
-    function handleIncomingRealtimeMessage(msg) {
-      if (!msg || msg.roomCode !== currentRoomCode.toUpperCase()) return;
-
-      if (msg.type === 'NEW_BALLOON' && msg.balloon) {
-        const balloon = msg.balloon;
-        activeBalloonsMap.set(balloon.id, balloon);
-        totalSignaturesCount = Math.max(totalSignaturesCount, activeBalloonsMap.size);
-        saveLocalRoomStorage(activeBalloonsMap);
-        updateCountersHUD();
-
-        if (isCurrentViewDisplay()) {
-          spawnBalloonOnStage(balloon, true);
-        }
-      }
-
-      else if (msg.type === 'POP_BALLOON' && msg.balloonId) {
-        triggerLocalBalloonBurst(msg.balloonId);
-        activeBalloonsMap.delete(msg.balloonId);
-        saveLocalRoomStorage(activeBalloonsMap);
-        updateCountersHUD();
-      }
-
-      else if (msg.type === 'POP_ALL') {
-        const ids = Array.from(balloonInstancesMap.keys());
-        ids.forEach(id => triggerLocalBalloonBurst(id));
-        activeBalloonsMap.clear();
-        saveLocalRoomStorage(activeBalloonsMap);
-        updateCountersHUD();
-      }
-
-      else if (msg.type === 'REQUEST_ROOM_SYNC' && msg.sender !== clientId) {
-        // If this device is the Big Display, share state to newly arrived laptop/phone
-        if (isCurrentViewDisplay() && activeBalloonsMap.size > 0) {
-          broadcastCloudMessage({
-            type: 'ROOM_SYNC_STATE',
-            balloons: Array.from(activeBalloonsMap.values()),
-            totalCount: totalSignaturesCount,
-            targetClient: msg.sender
-          });
-        }
-      }
-
-      else if (msg.type === 'ROOM_SYNC_STATE') {
-        if (msg.targetClient && msg.targetClient !== clientId) return;
-        if (Array.isArray(msg.balloons)) {
-          msg.balloons.forEach(b => {
-            if (!activeBalloonsMap.has(b.id)) {
-              activeBalloonsMap.set(b.id, b);
-              if (isCurrentViewDisplay()) {
-                spawnBalloonOnStage(b, false);
-              }
-            }
-          });
-          if (msg.totalCount) totalSignaturesCount = Math.max(totalSignaturesCount, msg.totalCount);
-          saveLocalRoomStorage(activeBalloonsMap);
-          updateCountersHUD();
-        }
-      }
-    }
-
-    // Inter-tab BroadcastChannel fallback
-    try {
-      window.broadcastChan = new BroadcastChannel('exhibit_guestbook_channel');
-      window.broadcastChan.onmessage = (ev) => handleIncomingRealtimeMessage(ev.data);
-    } catch (e) {}
-
-    window.handleFormSubmission = function(e) {
+    function startDrawing(e) {
+      isDrawing = true;
+      document.getElementById('sigPlaceholder').classList.add('hidden');
+      const coords = getCanvasCoordinates(e);
+      currentPath = { points: [coords] };
+      paths.push(currentPath);
       e.preventDefault();
-      audioSynth.init();
+    }
 
-      const nameInput = document.getElementById('guestName');
-      const affiliationInput = document.getElementById('guestAffiliation');
-      const name = nameInput.value.trim();
-      const affiliation = affiliationInput.value.trim();
+    function draw(e) {
+      if (!isDrawing) return;
+      const coords = getCanvasCoordinates(e);
+      currentPath.points.push(coords);
+      redrawCanvas();
+      e.preventDefault();
+    }
 
-      if (!name) return;
+    function stopDrawing() {
+      isDrawing = false;
+    }
 
-      // Extract ultra-crisp vector SVG signature
-      let signatureDataUrl = generateCleanSignatureSVG();
-      if (!signatureDataUrl) {
-        signatureDataUrl = generateCursiveFallbackSignature(name);
-      }
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    window.addEventListener('mouseup', stopDrawing);
 
-      const balloonId = 'b_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
-      const balloonPayload = {
-        id: balloonId,
-        roomCode: currentRoomCode.toUpperCase(),
-        name: name,
-        affiliation: affiliation,
-        signatureUrl: signatureDataUrl,
-        palette: currentSelectedPalette,
-        createdAt: Date.now(),
-        popped: false
-      };
+    canvas.addEventListener('touchstart', startDrawing, { passive: false });
+    canvas.addEventListener('touchmove', draw, { passive: false });
+    window.addEventListener('touchend', stopDrawing);
 
-      // Save locally
-      activeBalloonsMap.set(balloonId, balloonPayload);
-      totalSignaturesCount++;
-      saveLocalRoomStorage(activeBalloonsMap);
-      updateCountersHUD();
+    function clearSignaturePad() {
+      paths = [];
+      redrawCanvas();
+      document.getElementById('sigPlaceholder').classList.remove('hidden');
+    }
 
-      // Transmit to all other laptops and Big Display worldwide instantly
-      broadcastCloudMessage({
-        type: 'NEW_BALLOON',
-        balloon: balloonPayload,
-        sender: clientId
+    // Converts drawing to normalized SVG Path string for low-bandwidth transport
+    function exportSignatureToSVGPath() {
+      if (paths.length === 0) return '';
+      const rect = canvas.getBoundingClientRect();
+      const w = rect.width || 1;
+      const h = rect.height || 1;
+
+      let d = '';
+      paths.forEach(p => {
+        if (p.points.length === 0) return;
+        // Normalize coordinates to 0..200 viewBox for crisp scaling
+        const nx0 = ((p.points[0].x / w) * 200).toFixed(1);
+        const ny0 = ((p.points[0].y / h) * 100).toFixed(1);
+        d += `M${nx0},${ny0}`;
+        for (let i = 1; i < p.points.length; i++) {
+          const nx = ((p.points[i].x / w) * 200).toFixed(1);
+          const ny = ((p.points[i].y / h) * 100).toFixed(1);
+          d += `L${nx},${ny}`;
+        }
       });
-
-      audioSynth.playLaunch();
-      showKioskSuccessCard(name);
-
-      nameInput.value = '';
-      affiliationInput.value = '';
-      clearSignatureCanvas();
-    };
-
-    function showKioskSuccessCard(guestName) {
-      const overlay = document.getElementById('kioskSuccessOverlay');
-      const card = document.getElementById('kioskSuccessCard');
-      const nameEl = document.getElementById('successGuestName');
-      const countdownEl = document.getElementById('countdownSecText');
-      const barEl = document.getElementById('resetCountdownBar');
-
-      if (nameEl) nameEl.textContent = guestName;
-      if (countdownEl) countdownEl.textContent = '3';
-      if (barEl) {
-        barEl.style.transition = 'none';
-        barEl.style.width = '100%';
-        setTimeout(() => {
-          barEl.style.transition = 'width 2.8s linear';
-          barEl.style.width = '0%';
-        }, 30);
-      }
-
-      overlay.classList.remove('hidden');
-      setTimeout(() => {
-        overlay.classList.remove('opacity-0');
-        card.classList.remove('scale-95');
-        card.classList.add('scale-100');
-      }, 10);
-
-      let timeLeft = 3;
-      const interval = setInterval(() => {
-        timeLeft--;
-        if (countdownEl) countdownEl.textContent = timeLeft;
-        if (timeLeft <= 0) {
-          clearInterval(interval);
-          overlay.classList.add('opacity-0');
-          card.classList.add('scale-95');
-          setTimeout(() => {
-            overlay.classList.add('hidden');
-          }, 300);
-        }
-      }, 950);
+      return d;
     }
 
-    class FloatingBalloonEntity {
-      constructor(data, startFromBottom = false) {
-        this.data = data;
-        this.id = data.id;
-        const stage = document.getElementById('balloonStage');
-        this.bounds = {
-          w: stage ? stage.clientWidth : window.innerWidth,
-          h: stage ? stage.clientHeight : window.innerHeight
-        };
+    // --- Web Audio Pop Synthesizer ---
+    function playPopSound() {
+      if (!soundEnabled) return;
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
 
-        this.width = Math.min(270, Math.max(210, this.bounds.w * 0.17));
-        this.height = this.width * 1.34;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
 
-        if (startFromBottom) {
-          this.x = Math.random() * (this.bounds.w - this.width - 80) + 40;
-          this.y = this.bounds.h + 20;
-        } else {
-          this.x = Math.random() * (this.bounds.w - this.width - 80) + 40;
-          this.y = Math.random() * (this.bounds.h - this.height - 180) + 90;
-        }
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(450, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.12);
 
-        this.vx = (Math.random() - 0.5) * 0.65;
-        this.vy = -(0.35 + Math.random() * 0.45);
-        this.angle = (Math.random() - 0.5) * 5;
-        this.vAngle = (Math.random() - 0.5) * 0.03;
-        this.wave = Math.random() * Math.PI * 2;
-        this.isPopping = false;
+        gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
 
-        this.dom = this.renderDOM();
-      }
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
 
-      renderDOM() {
-        const pal = this.data.palette || PALETTES[0];
-        const card = document.createElement('div');
-        card.id = `balloon_node_${this.id}`;
-        card.className = 'absolute cursor-pointer transition-transform duration-75 select-none will-change-transform';
-        card.style.width = `${this.width}px`;
-        card.style.transform = `translate3d(${this.x}px, ${this.y}px, 0px) rotate(${this.angle}deg)`;
-
-        card.innerHTML = `
-          <div class="balloon-body p-5 border-2 shadow-2xl flex flex-col justify-between items-center text-center backdrop-blur-md"
-               style="background: ${pal.bg}; border-color: ${pal.border}; box-shadow: 0 20px 45px -10px ${pal.glow}, 0 0 20px ${pal.glow}; min-height: ${this.height}px;">
-            
-            <div class="balloon-sheen"></div>
-
-            <!-- Top Tag on Balloon -->
-            <div class="w-full flex items-center justify-between z-10">
-              <span class="text-[10px] uppercase font-mono tracking-wider font-black px-2.5 py-0.5 rounded-full bg-black/30 text-white/95 border border-white/20">
-                Attendee
-              </span>
-              <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-black/30 text-cyan-300 border border-cyan-400/30 flex items-center gap-1">
-                <i class="fa-solid fa-infinity text-[9px]"></i> Active
-              </span>
-            </div>
-
-            <!-- Hand Signature & Name Display -->
-            <div class="my-auto w-full z-10 flex flex-col items-center justify-center px-1 py-1">
-              <div class="w-full max-h-24 py-1 flex items-center justify-center">
-                <img src="${this.data.signatureUrl}" alt="Signature" class="max-h-20 max-w-[94%] object-contain filter drop-shadow-[0_2px_6px_rgba(0,0,0,0.65)] pointer-events-none" />
-              </div>
-              
-              <div class="w-4/5 border-b border-white/30 my-1.5"></div>
-              
-              <h3 class="font-extrabold text-white text-base tracking-wide drop-shadow-md truncate w-full px-2">
-                ${escapeHtml(this.data.name)}
-              </h3>
-
-              ${this.data.affiliation ? `<p class="text-[11px] text-white/85 font-medium italic truncate max-w-full px-2 mt-0.5">${escapeHtml(this.data.affiliation)}</p>` : ''}
-            </div>
-
-            <!-- Balloon Knot & String -->
-            <div class="balloon-knot" style="background: ${pal.border};"></div>
-            <div class="balloon-string-line"></div>
-          </div>
-        `;
-
-        // Interactive popping on tap/click
-        card.addEventListener('click', (e) => {
-          e.stopPropagation();
-          popBalloonAction(this.id);
-        });
-
-        return card;
-      }
-
-      update(bounds) {
-        if (this.isPopping) return;
-
-        this.bounds = bounds;
-        this.wave += 0.035;
-
-        const sway = Math.sin(this.wave) * 0.45;
-        this.x += this.vx + sway;
-        this.y += this.vy;
-        this.angle += this.vAngle;
-
-        // Wall collisions
-        if (this.x < 15) {
-          this.x = 15;
-          this.vx = Math.abs(this.vx) * 0.8;
-        } else if (this.x + this.width > this.bounds.w - 15) {
-          this.x = this.bounds.w - this.width - 15;
-          this.vx = -Math.abs(this.vx) * 0.8;
-        }
-
-        if (this.y < 85) {
-          this.y = 85;
-          this.vy = Math.abs(this.vy) * 0.6;
-        } else if (this.y + this.height > this.bounds.h - 40) {
-          this.y = this.bounds.h - this.height - 40;
-          this.vy = -Math.abs(this.vy) * 0.6;
-        }
-
-        this.dom.style.transform = `translate3d(${this.x.toFixed(1)}px, ${this.y.toFixed(1)}px, 0px) rotate(${this.angle.toFixed(1)}deg)`;
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.13);
+      } catch (e) {
+        // Audio policy ignore
       }
     }
 
-    function spawnBalloonOnStage(balloonData, startFromBottom = false) {
-      if (balloonInstancesMap.has(balloonData.id)) return;
-      const stage = document.getElementById('balloonStage');
-      if (!stage) return;
-
-      const entity = new FloatingBalloonEntity(balloonData, startFromBottom);
-      balloonInstancesMap.set(balloonData.id, entity);
-      stage.appendChild(entity.dom);
-    }
-
-    window.popBalloonAction = function(balloonId) {
-      triggerLocalBalloonBurst(balloonId);
-      activeBalloonsMap.delete(balloonId);
-      saveLocalRoomStorage(activeBalloonsMap);
-
-      broadcastCloudMessage({
-        type: 'POP_BALLOON',
-        balloonId: balloonId,
-        sender: clientId
-      });
-    };
-
-    function triggerLocalBalloonBurst(balloonId) {
-      const entity = balloonInstancesMap.get(balloonId);
-      if (!entity || entity.isPopping) return;
-
-      entity.isPopping = true;
-      audioSynth.playPop();
-
-      const rect = entity.dom.getBoundingClientRect();
-      const originX = (rect.left + rect.width / 2) / window.innerWidth;
-      const originY = (rect.top + rect.height / 2) / window.innerHeight;
-      triggerConfettiExplosion(originX, originY, entity.data.palette);
-
-      entity.dom.classList.add('animate-shaking-pop');
-
-      setTimeout(() => {
-        if (entity.dom && entity.dom.parentNode) {
-          entity.dom.parentNode.removeChild(entity.dom);
-        }
-        balloonInstancesMap.delete(balloonId);
-        activeBalloonsMap.delete(balloonId);
-        updateCountersHUD();
-      }, 620);
-    }
-
-    function triggerConfettiExplosion(x, y, palette) {
-      if (typeof confetti !== 'function') return;
-      const colors = palette ? [palette.border, '#ffffff', '#fde047', '#38bdf8'] : ['#38bdf8', '#f43f5e', '#ffffff'];
-      confetti({
-        particleCount: 50,
-        spread: 80,
-        origin: { x, y },
-        colors: colors,
-        startVelocity: 30,
-        gravity: 0.95,
-        ticks: 120
-      });
-    }
-
-    /* PIN Security & Room Controls */
-    window.openDisplayWithAuth = function() {
-      if (isDisplayUnlocked) {
-        switchView('display');
-        return;
-      }
-      const modal = document.getElementById('pinLockModal');
-      const roomInput = document.getElementById('pinModalRoomInput');
-      const passInput = document.getElementById('pinModalPassInput');
-      const err = document.getElementById('pinErrorMessage');
-
-      if (roomInput) roomInput.value = currentRoomCode;
-      if (passInput) passInput.value = '';
-      if (err) err.classList.add('hidden');
-      if (modal) modal.classList.remove('hidden');
-    };
-
-    window.closePinModal = function() {
-      const modal = document.getElementById('pinLockModal');
-      if (modal) modal.classList.add('hidden');
-    };
-
-    window.verifyPinAndEnterDisplay = function() {
-      const passInput = document.getElementById('pinModalPassInput');
-      const roomInput = document.getElementById('pinModalRoomInput');
-      const err = document.getElementById('pinErrorMessage');
-
-      const enteredPin = passInput ? passInput.value.trim() : '';
-      const enteredRoom = roomInput ? roomInput.value.trim().toUpperCase() : currentRoomCode;
-
-      if (enteredPin === currentDisplayPin) {
-        isDisplayUnlocked = true;
-        closePinModal();
-        if (enteredRoom && enteredRoom !== currentRoomCode) {
-          setRoomCode(enteredRoom);
-        }
-        switchView('display');
+    function toggleAudio() {
+      soundEnabled = !soundEnabled;
+      const icon = document.getElementById('muteIcon');
+      if (soundEnabled) {
+        icon.setAttribute('data-lucide', 'volume-2');
       } else {
-        if (err) err.classList.remove('hidden');
-        if (passInput) {
-          passInput.value = '';
-          passInput.focus();
-        }
+        icon.setAttribute('data-lucide', 'volume-x');
       }
-    };
-
-    window.promptChangeRoomCode = function() {
-      const nextRoom = prompt('Enter Event Room Code (e.g. EXPO-2026, ART-HALL-1):', currentRoomCode);
-      if (nextRoom && nextRoom.trim()) {
-        setRoomCode(nextRoom.trim().toUpperCase());
-      }
-    };
-
-    window.promptChangePin = function() {
-      const newPin = prompt('Set new 4-digit Display PIN:', currentDisplayPin);
-      if (newPin && newPin.trim().length === 4) {
-        currentDisplayPin = newPin.trim();
-        const pinLabel = document.getElementById('adminCurrentPinLabel');
-        if (pinLabel) pinLabel.textContent = currentDisplayPin;
-      }
-    };
-
-    function setRoomCode(newRoom) {
-      currentRoomCode = newRoom;
-      
-      const kioskRoomLabel = document.getElementById('kioskRoomLabel');
-      const footerRoomLabel = document.getElementById('footerRoomLabel');
-      const btnRoomText = document.getElementById('btnRoomText');
-      const displayRoomBadge = document.getElementById('displayRoomBadge');
-      const qrRoomCodeLabel = document.getElementById('qrRoomCodeLabel');
-
-      if (kioskRoomLabel) kioskRoomLabel.textContent = currentRoomCode;
-      if (footerRoomLabel) footerRoomLabel.textContent = currentRoomCode;
-      if (btnRoomText) btnRoomText.textContent = currentRoomCode;
-      if (displayRoomBadge) displayRoomBadge.textContent = `Room: ${currentRoomCode}`;
-      if (qrRoomCodeLabel) qrRoomCodeLabel.textContent = currentRoomCode;
-
-      balloonInstancesMap.forEach(entity => {
-        if (entity.dom && entity.dom.parentNode) entity.dom.parentNode.removeChild(entity.dom);
-      });
-      balloonInstancesMap.clear();
-
-      // Load balloons for newly selected room
-      activeBalloonsMap = loadLocalRoomStorage();
-      totalSignaturesCount = activeBalloonsMap.size;
-      updateCountersHUD();
-
-      // Update URL query string
-      const url = new URL(window.location.href);
-      url.searchParams.set('room', currentRoomCode);
-      window.history.replaceState({}, '', url.toString());
-
-      // Re-subscribe MQTT topic
-      if (mqttClient && mqttClient.connected) {
-        const topic = getRoomTopic(currentRoomCode);
-        mqttClient.subscribe(topic, { qos: 1 });
-        broadcastCloudMessage({
-          type: 'REQUEST_ROOM_SYNC',
-          sender: clientId,
-          roomCode: currentRoomCode
-        });
-      }
+      lucide.createIcons();
     }
 
-    /* Cosmic Background Particle Canvas */
-    let cosmicCanvas, cosmicCtx;
-    let particles = [];
-
-    function initCosmicCanvas() {
-      cosmicCanvas = document.getElementById('displayCosmicCanvas');
-      if (!cosmicCanvas) return;
-      cosmicCtx = cosmicCanvas.getContext('2d');
-      resizeCosmicCanvas();
-
-      particles = [];
-      const count = Math.min(80, Math.floor(window.innerWidth / 20));
-      for (let i = 0; i < count; i++) {
-        particles.push({
-          x: Math.random() * cosmicCanvas.width,
-          y: Math.random() * cosmicCanvas.height,
-          radius: Math.random() * 1.6 + 0.4,
-          alpha: Math.random() * 0.7 + 0.2,
-          speedY: -(Math.random() * 0.35 + 0.1),
-          speedX: (Math.random() - 0.5) * 0.2
-        });
-      }
-
-      function drawCosmic() {
-        if (isCurrentViewDisplay() && cosmicCtx) {
-          cosmicCtx.clearRect(0, 0, cosmicCanvas.width, cosmicCanvas.height);
-          particles.forEach(p => {
-            p.y += p.speedY;
-            p.x += p.speedX;
-            if (p.y < 0) p.y = cosmicCanvas.height;
-            if (p.x < 0) p.x = cosmicCanvas.width;
-            if (p.x > cosmicCanvas.width) p.x = 0;
-
-            cosmicCtx.beginPath();
-            cosmicCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-            cosmicCtx.fillStyle = `rgba(224, 242, 254, ${p.alpha})`;
-            cosmicCtx.fill();
-          });
-        }
-        requestAnimationFrame(drawCosmic);
-      }
-      requestAnimationFrame(drawCosmic);
-    }
-
-    function resizeCosmicCanvas() {
-      if (!cosmicCanvas) return;
-      cosmicCanvas.width = window.innerWidth;
-      cosmicCanvas.height = window.innerHeight;
-    }
-
-    function startPhysicsLoop() {
-      const stage = document.getElementById('balloonStage');
-      function tick() {
-        if (isCurrentViewDisplay() && stage) {
-          const bounds = {
-            w: stage.clientWidth || window.innerWidth,
-            h: stage.clientHeight || window.innerHeight
-          };
-          balloonInstancesMap.forEach(balloon => {
-            balloon.update(bounds);
-          });
-        }
-        requestAnimationFrame(tick);
-      }
-      requestAnimationFrame(tick);
-    }
-
-    function isCurrentViewDisplay() {
-      const displayScreen = document.getElementById('bigDisplayScreen');
-      return displayScreen && !displayScreen.classList.contains('hidden');
-    }
-
-    window.switchView = function(viewName) {
-      const laptopScreen = document.getElementById('laptopKioskScreen');
-      const displayScreen = document.getElementById('bigDisplayScreen');
-
-      if (viewName === 'display') {
-        if (!isDisplayUnlocked) {
-          openDisplayWithAuth();
-          return;
-        }
-        laptopScreen.classList.add('hidden');
-        displayScreen.classList.remove('hidden');
-        window.location.hash = 'display';
-        resizeCosmicCanvas();
-
-        activeBalloonsMap.forEach((data, id) => {
-          if (!balloonInstancesMap.has(id)) {
-            spawnBalloonOnStage(data, false);
-          }
-        });
-      } else {
-        displayScreen.classList.add('hidden');
-        laptopScreen.classList.remove('hidden');
-        window.location.hash = 'laptop';
-        setTimeout(resizeSignaturePad, 60);
-      }
-    };
-
-    window.toggleFullscreen = function() {
+    function toggleFullscreen() {
       if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch(() => {});
       } else {
         document.exitFullscreen().catch(() => {});
       }
-    };
-
-    window.toggleSound = function() {
-      audioSynth.init();
-      isSoundMuted = !isSoundMuted;
-      const adminSoundIcon = document.getElementById('adminSoundIcon');
-      const adminSoundBtn = document.getElementById('adminSoundBtn');
-      if (adminSoundIcon && adminSoundBtn) {
-        adminSoundIcon.className = isSoundMuted ? 'fa-solid fa-volume-xmark mr-1' : 'fa-solid fa-volume-high mr-1';
-        adminSoundBtn.innerHTML = `<i class="${adminSoundIcon.className}"></i> ${isSoundMuted ? 'Muted' : 'Enabled'}`;
-      }
-    };
-
-    window.toggleAdminPanel = function() {
-      const p = document.getElementById('adminPanelModal');
-      if (p) p.classList.toggle('hidden');
-    };
-
-    window.toggleQRModal = function() {
-      const m = document.getElementById('qrModal');
-      if (!m) return;
-      m.classList.toggle('hidden');
-      if (!m.classList.contains('hidden')) {
-        renderQRCode();
-      }
-    };
-
-    function renderQRCode() {
-      const container = document.getElementById('qrContainer');
-      const label = document.getElementById('qrUrlLabel');
-      if (!container) return;
-      container.innerHTML = '';
-
-      const kioskUrl = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(currentRoomCode)}#laptop`;
-      if (label) label.textContent = kioskUrl;
-
-      new QRCode(container, {
-        text: kioskUrl,
-        width: 180,
-        height: 180,
-        colorDark: "#030712",
-        colorLight: "#ffffff",
-        correctLevel: QRCode.CorrectLevel.M
-      });
     }
 
-    window.spawnSampleGuest = function() {
-      const sampleNames = ['Dr. Elena Vance', 'Kenji Takahashi', 'Amina Al-Mansoor', 'Marcus Zhao', 'Liam O\'Connor'];
-      const sampleNotes = ['Quantum Labs • Tokyo', 'VR Research Fellow', 'Loved the Design Show', 'Robotics Architect', 'Visitor #108'];
-      const randName = sampleNames[Math.floor(Math.random() * sampleNames.length)];
-      const randNote = sampleNotes[Math.floor(Math.random() * sampleNotes.length)];
-      const randPalette = PALETTES[Math.floor(Math.random() * PALETTES.length)];
+    // --- Universal Cloud Sync Engine (MQTT over WebSockets) ---
+    function initCloudSync() {
+      const clientId = 'guestbook_' + Math.random().toString(16).substring(2, 10);
+      const topic = `exhibition/guestbook/${currentRoom}/balloons`;
 
-      const sampleBalloon = {
-        id: 'b_sample_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
-        roomCode: currentRoomCode.toUpperCase(),
-        name: randName,
-        affiliation: randNote,
-        signatureUrl: generateCursiveFallbackSignature(randName),
-        palette: randPalette,
-        createdAt: Date.now(),
-        popped: false
-      };
-
-      activeBalloonsMap.set(sampleBalloon.id, sampleBalloon);
-      totalSignaturesCount++;
-      saveLocalRoomStorage(activeBalloonsMap);
-      updateCountersHUD();
-
-      broadcastCloudMessage({
-        type: 'NEW_BALLOON',
-        balloon: sampleBalloon,
-        sender: clientId
+      // Free reliable public broker over HTTPS WebSockets
+      mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
+        clientId: clientId,
+        clean: true,
+        reconnectPeriod: 2500
       });
 
-      audioSynth.playLaunch();
-    };
+      const badge = document.getElementById('connBadge');
+      const badgeText = document.getElementById('connStatusText');
 
-    window.requestPopAllBalloons = function() {
-      if (balloonInstancesMap.size === 0 && activeBalloonsMap.size === 0) return;
-      toggleAdminPanel();
-
-      const idsToPop = Array.from(balloonInstancesMap.keys());
-      idsToPop.forEach(id => triggerLocalBalloonBurst(id));
-
-      activeBalloonsMap.clear();
-      saveLocalRoomStorage(activeBalloonsMap);
-      updateCountersHUD();
-
-      broadcastCloudMessage({
-        type: 'POP_ALL',
-        sender: clientId
+      mqttClient.on('connect', () => {
+        badge.classList.remove('hidden');
+        badge.className = 'hidden sm:flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-medium';
+        badgeText.innerText = 'Cloud Connected';
+        mqttClient.subscribe(topic);
       });
-    };
 
-    function updateCountersHUD() {
-      const activeCount = activeBalloonsMap.size;
-      const wallCount = document.getElementById('wallActiveCount');
-      const totalCount = document.getElementById('wallTotalCount');
+      mqttClient.on('reconnect', () => {
+        badgeText.innerText = 'Reconnecting...';
+      });
 
-      if (wallCount) wallCount.textContent = activeCount;
-      if (totalCount) totalCount.textContent = totalSignaturesCount;
-    }
-
-    function updateWallClock() {
-      const clockEl = document.getElementById('wallClockTime');
-      if (!clockEl) return;
-      const d = new Date();
-      clockEl.textContent = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    }
-    setInterval(updateWallClock, 1000);
-
-    function escapeHtml(str) {
-      if (!str) return '';
-      return str.replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[m]);
-    }
-
-    window.addEventListener('load', () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const urlRoom = urlParams.get('room');
-      if (urlRoom && urlRoom.trim()) {
-        currentRoomCode = urlRoom.trim().toUpperCase();
-      }
-
-      setRoomCode(currentRoomCode);
-      renderColorPalettePicker();
-      initSignaturePad();
-      initCosmicCanvas();
-      startPhysicsLoop();
-      updateWallClock();
-
-      // Launch zero-configuration cloud realtime synchronization
-      initCloudRealtime();
-
-      if (window.location.hash.toLowerCase().includes('display')) {
-        openDisplayWithAuth();
-      } else {
-        switchView('laptop');
-      }
-
-      window.addEventListener('resize', () => {
-        if (!isCurrentViewDisplay()) {
-          resizeSignaturePad();
-        } else {
-          resizeCosmicCanvas();
+      mqttClient.on('message', (t, message) => {
+        try {
+          const payload = JSON.parse(message.toString());
+          if (payload.action === 'NEW_BALLOON') {
+            spawnBalloonOnWall(payload.data);
+            saveToLedger(payload.data);
+          } else if (payload.action === 'POP_BALLOON') {
+            removeBalloonById(payload.id);
+          } else if (payload.action === 'POP_ALL') {
+            activeBalloons.forEach(b => triggerPopAnimation(b));
+          }
+        } catch (e) {
+          console.error('Payload parse err:', e);
         }
       });
+    }
+
+    // --- Form Submission Handling ---
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      const name = document.getElementById('guestName').value.trim();
+      const org = document.getElementById('guestOrg').value.trim();
+      const svgPath = exportSignatureToSVGPath();
+
+      if (!svgPath) {
+        alert('Please draw your signature before submitting!');
+        return;
+      }
+
+      const balloonData = {
+        id: 'balloon_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+        name: name,
+        org: org,
+        svgPath: svgPath,
+        colorIndex: selectedColorIndex,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        date: new Date().toLocaleDateString()
+      };
+
+      // 1. Broadcast to cloud
+      if (mqttClient && mqttClient.connected) {
+        const topic = `exhibition/guestbook/${currentRoom}/balloons`;
+        mqttClient.publish(topic, JSON.stringify({ action: 'NEW_BALLOON', data: balloonData }));
+      } else {
+        // Local fallback
+        spawnBalloonOnWall(balloonData);
+      }
+
+      // 2. Save locally into guestbook registry
+      saveToLedger(balloonData);
+
+      // 3. User feedback
+      showSuccessNotice();
+      
+      // 4. Reset form for next guest
+      document.getElementById('guestName').value = '';
+      document.getElementById('guestOrg').value = '';
+      clearSignaturePad();
+    }
+
+    function showSuccessNotice() {
+      const notice = document.getElementById('successNotice');
+      notice.classList.remove('hidden');
+      setTimeout(() => notice.classList.add('hidden'), 3500);
+    }
+
+    // --- Balloon Floating & Animation Engine ---
+    const stage = document.getElementById('balloonStage');
+
+    function spawnBalloonOnWall(data) {
+      // Check if already on stage
+      if (activeBalloons.some(b => b.id === data.id)) return;
+
+      const color = APP_CONFIG.balloonColors[data.colorIndex] || APP_CONFIG.balloonColors[0];
+      const wrapper = document.createElement('div');
+      wrapper.className = 'balloon-wrapper';
+      wrapper.id = data.id;
+
+      // Realistic balloon HTML structure
+      wrapper.innerHTML = `
+        <div class="balloon-body w-48 h-56 p-4 text-center" style="background: ${color.bg};">
+          <p class="font-extrabold text-white text-base tracking-tight truncate drop-shadow">${data.name}</p>
+          ${data.org ? `<p class="text-[11px] text-white/80 font-medium truncate drop-shadow-sm mb-1">${data.org}</p>` : ''}
+          <div class="w-full h-16 flex items-center justify-center my-1 bg-white/10 rounded-lg backdrop-blur-sm px-2">
+            <svg viewBox="0 0 200 100" class="w-full h-full stroke-current" style="color: ${color.stroke}; fill: none; stroke-width: 4px; stroke-linecap: round; stroke-linejoin: round;">
+              <path d="${data.svgPath}" />
+            </svg>
+          </div>
+          <span class="text-[10px] text-white/70 font-semibold mt-1">${data.timestamp}</span>
+        </div>
+        <div class="balloon-knot" style="background: ${color.knot};"></div>
+        <div class="balloon-string"></div>
+      `;
+
+      // Physics tracking object
+      const stageRect = stage.getBoundingClientRect();
+      const balloonObj = {
+        id: data.id,
+        el: wrapper,
+        x: Math.random() * (stageRect.width - 240) + 120,
+        y: stageRect.height + 150, // Starts off bottom
+        vx: (Math.random() - 0.5) * 0.8,
+        vy: -(0.7 + Math.random() * 0.6),
+        wobble: Math.random() * Math.PI * 2,
+        wobbleSpeed: 0.02 + Math.random() * 0.02,
+        data: data
+      };
+
+      // Tap or Click to Pop Balloon
+      wrapper.onclick = () => {
+        triggerPopAnimation(balloonObj);
+        // Inform other screens to pop
+        if (mqttClient && mqttClient.connected) {
+          const topic = `exhibition/guestbook/${currentRoom}/balloons`;
+          mqttClient.publish(topic, JSON.stringify({ action: 'POP_BALLOON', id: balloonObj.id }));
+        }
+      };
+
+      stage.appendChild(wrapper);
+      activeBalloons.push(balloonObj);
+      updateBalloonCount();
+    }
+
+    function removeBalloonById(id) {
+      const balloon = activeBalloons.find(b => b.id === id);
+      if (balloon) triggerPopAnimation(balloon);
+    }
+
+    function triggerPopAnimation(balloonObj) {
+      if (!balloonObj || !balloonObj.el) return;
+      playPopSound();
+
+      // Confetti burst from balloon coordinates
+      const rect = balloonObj.el.getBoundingClientRect();
+      confetti({
+        particleCount: 40,
+        spread: 60,
+        origin: {
+          x: (rect.left + rect.width / 2) / window.innerWidth,
+          y: (rect.top + rect.height / 2) / window.innerHeight
+        }
+      });
+
+      balloonObj.el.classList.add('balloon-popping');
+      setTimeout(() => {
+        if (balloonObj.el.parentElement) {
+          balloonObj.el.parentElement.removeChild(balloonObj.el.el || balloonObj.el);
+        }
+        activeBalloons = activeBalloons.filter(b => b.id !== balloonObj.id);
+        updateBalloonCount();
+      }, 240);
+    }
+
+    function popAllBalloons() {
+      if (mqttClient && mqttClient.connected) {
+        const topic = `exhibition/guestbook/${currentRoom}/balloons`;
+        mqttClient.publish(topic, JSON.stringify({ action: 'POP_ALL' }));
+      } else {
+        activeBalloons.forEach(b => triggerPopAnimation(b));
+      }
+    }
+
+    function updateBalloonCount() {
+      document.getElementById('balloonCountDisplay').innerText = activeBalloons.length;
+    }
+
+    // Animation Tick Loop
+    function animationLoop() {
+      const stageRect = stage.getBoundingClientRect();
+      const stageWidth = stageRect.width || window.innerWidth;
+      const stageHeight = stageRect.height || window.innerHeight;
+
+      activeBalloons.forEach(b => {
+        b.wobble += b.wobbleSpeed;
+        b.x += b.vx + Math.sin(b.wobble) * 0.6;
+        b.y += b.vy;
+
+        // Bounce horizontally
+        if (b.x < 110) { b.x = 110; b.vx *= -1; }
+        if (b.x > stageWidth - 110) { b.x = stageWidth - 110; b.vx *= -1; }
+
+        // Top constraint (soft cushion bounce)
+        if (b.y < 130) {
+          b.y = 130;
+          b.vy = 0.4;
+        }
+
+        b.el.style.left = `${b.x}px`;
+        b.el.style.top = `${b.y}px`;
+      });
+
+      requestAnimationFrame(animationLoop);
+    }
+    requestAnimationFrame(animationLoop);
+
+    // --- Admin Security & Modal Management ---
+    function openAdminModal() {
+      document.getElementById('adminModal').classList.remove('hidden');
+      document.getElementById('adminPinScreen').classList.remove('hidden');
+      document.getElementById('adminDashboardScreen').classList.add('hidden');
+      document.getElementById('pinError').classList.add('hidden');
+      document.getElementById('adminPinInput').value = '';
+    }
+
+    function closeAdminModal() {
+      document.getElementById('adminModal').classList.add('hidden');
+    }
+
+    function verifyAdminPin(e) {
+      e.preventDefault();
+      const entered = document.getElementById('adminPinInput').value.trim();
+      if (entered === APP_CONFIG.adminPin) {
+        document.getElementById('adminPinScreen').classList.add('hidden');
+        document.getElementById('adminDashboardScreen').classList.remove('hidden');
+        document.getElementById('adminRoomCodeDisplay').innerText = currentRoom;
+        updateLedgerCounters();
+      } else {
+        document.getElementById('pinError').classList.remove('hidden');
+      }
+    }
+
+    function clearLedgerConfirm() {
+      if (confirm('Are you sure you want to erase all stored guest signatures for this room? This action cannot be undone.')) {
+        localStorage.removeItem(STORAGE_LEDGER_KEY);
+        updateLedgerCounters();
+        alert('All guestbook records for this room have been cleared.');
+      }
+    }
+
+    // --- Official PDF Guestbook Export (using jsPDF) ---
+    async function generateGuestbookPDF() {
+      const records = getStoredLedger();
+      if (records.length === 0) {
+        alert('There are no signatures recorded yet to export.');
+        return;
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+
+      // Header Banner
+      doc.setFillColor(15, 23, 42); // slate-900
+      doc.rect(0, 0, pageWidth, 42, 'F');
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(22);
+      doc.text('EXHIBITION GUESTBOOK', 14, 20);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(148, 163, 184); // slate-400
+      doc.text(`Room: ${currentRoom}  |  Generated: ${new Date().toLocaleString()}`, 14, 28);
+      doc.text(`Total Signatures: ${records.length}`, 14, 35);
+
+      let currentY = 52;
+      const margin = 14;
+      const colWidth = (pageWidth - (margin * 2) - 8) / 2;
+      const cardHeight = 38;
+
+      for (let i = 0; i < records.length; i++) {
+        const item = records[i];
+        const isSecondCol = i % 2 !== 0;
+        const currentX = isSecondCol ? margin + colWidth + 8 : margin;
+
+        // Card Frame
+        doc.setFillColor(248, 250, 252);
+        doc.setDrawColor(226, 232, 240);
+        doc.roundedRect(currentX, currentY, colWidth, cardHeight, 3, 3, 'FD');
+
+        // Visitor Name
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.setTextColor(15, 23, 42);
+        doc.text(doc.splitTextToSize(item.name, colWidth - 8)[0], currentX + 5, currentY + 8);
+
+        // Subtext (Org & Timestamp)
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(100, 116, 139);
+        const sub = `${item.org ? item.org + ' • ' : ''}${item.timestamp || ''}`;
+        doc.text(doc.splitTextToSize(sub, colWidth - 8)[0], currentX + 5, currentY + 13);
+
+        // Render vector signature to offscreen canvas and insert as PNG
+        if (item.svgPath) {
+          const offCanvas = document.createElement('canvas');
+          offCanvas.width = 300;
+          offCanvas.height = 120;
+          const offCtx = offCanvas.getContext('2d');
+          
+          offCtx.fillStyle = '#ffffff';
+          offCtx.fillRect(0, 0, 300, 120);
+
+          const path2d = new Path2D(item.svgPath);
+          offCtx.strokeStyle = '#1e1b4b'; // dark ink
+          offCtx.lineWidth = 4;
+          offCtx.lineCap = 'round';
+          offCtx.lineJoin = 'round';
+          offCtx.stroke(path2d);
+
+          const imgData = offCanvas.toDataURL('image/png');
+          doc.addImage(imgData, 'PNG', currentX + 5, currentY + 15, colWidth - 10, 20);
+        }
+
+        // New Row & Page Overflow Logic
+        if (isSecondCol) {
+          currentY += cardHeight + 6;
+          if (currentY + cardHeight > pageHeight - 15) {
+            doc.addPage();
+            currentY = 20;
+          }
+        }
+      }
+
+      // Add Page Numbers
+      const totalPages = doc.internal.getNumberOfPages();
+      for (let p = 1; p <= totalPages; p++) {
+        doc.setPage(p);
+        doc.setFontSize(8);
+        doc.setTextColor(148, 163, 184);
+        doc.text(`Page ${p} of ${totalPages}`, pageWidth - 28, pageHeight - 8);
+      }
+
+      // Save output PDF file
+      doc.save(`Exhibition-Guestbook-${currentRoom}-${Date.now()}.pdf`);
+    }
+
+    // --- Window Initialization ---
+    window.addEventListener('load', () => {
+      lucide.createIcons();
+      resizeCanvas();
+      initCloudSync();
+      updateLedgerCounters();
+
+      // Check view hash in URL (#display or #laptop)
+      if (window.location.hash === '#display') {
+        switchView('display');
+      }
     });
+
+    window.addEventListener('resize', resizeCanvas);
   </script>
 </body>
 </html>
