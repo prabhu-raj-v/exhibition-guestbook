@@ -48,139 +48,140 @@
       margin: 0;
       padding: 0;
       overflow: hidden;
-      background: #0ea5e9;
+      background: #0284c7;
       font-family: 'Plus Jakarta Sans', sans-serif;
     }
 
-    /* Photorealistic Sky Ambient Gradient */
+    /* Photorealistic Sky Ambient Gradient with Altitude Shading */
     .real-sky-bg {
-      background: linear-gradient(180deg, #1d4ed8 0%, #2563eb 15%, #38bdf8 55%, #7dd3fc 85%, #bae6fd 100%);
+      background: linear-gradient(180deg, #1e40af 0%, #2563eb 12%, #38bdf8 50%, #7dd3fc 82%, #bae6fd 100%);
     }
 
-    /* Sun Glow & Sunbeams */
+    /* Natural Sun Flares & Atmosphere */
     .sun-flare {
       position: absolute;
-      top: 6%;
+      top: 5%;
       right: 14%;
-      width: 220px;
-      height: 220px;
+      width: 250px;
+      height: 250px;
       border-radius: 50%;
-      background: radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(254,240,138,0.7) 25%, rgba(253,224,71,0.2) 50%, rgba(255,255,255,0) 75%);
-      box-shadow: 0 0 120px 45px rgba(254, 240, 138, 0.45);
+      background: radial-gradient(circle, rgba(255,255,255,0.98) 0%, rgba(254,240,138,0.7) 22%, rgba(253,224,71,0.2) 48%, rgba(255,255,255,0) 75%);
+      box-shadow: 0 0 140px 50px rgba(254, 240, 138, 0.45);
       pointer-events: none;
       filter: blur(1px);
     }
     .sunbeam {
       position: absolute;
-      top: -100px;
-      right: 0px;
-      width: 700px;
-      height: 800px;
-      background: conic-gradient(from 135deg at 80% 20%, rgba(255,255,255,0.18) 0deg, rgba(255,255,255,0) 25deg, rgba(255,255,255,0.15) 45deg, rgba(255,255,255,0) 70deg);
+      top: -120px;
+      right: -20px;
+      width: 800px;
+      height: 900px;
+      background: conic-gradient(from 130deg at 78% 18%, rgba(255,255,255,0.22) 0deg, rgba(255,255,255,0) 24deg, rgba(255,255,255,0.18) 45deg, rgba(255,255,255,0) 72deg);
       pointer-events: none;
       mix-blend-mode: overlay;
     }
 
-    /* Real 3D Translucent Latex Balloon Styles */
+    /* Realistic 3D Pearlescent Latex Balloon Container */
     .balloon-wrapper {
       position: absolute;
-      transform: translate3d(-50%, -50%, 0);
       will-change: transform, left, top;
-      cursor: pointer;
+      cursor: grab;
       user-select: none;
-      transition: filter 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      touch-action: none;
+      filter: drop-shadow(0 18px 30px rgba(15, 23, 42, 0.38));
+      transition: filter 0.15s ease-out;
     }
-    .balloon-wrapper:hover {
-      filter: drop-shadow(0 15px 35px rgba(255, 255, 255, 0.65)) brightness(1.08);
-      z-index: 100 !important;
+    .balloon-wrapper:active {
+      cursor: grabbing;
+      filter: drop-shadow(0 25px 45px rgba(255, 255, 255, 0.55));
     }
 
     .balloon-egg {
       position: relative;
-      border-radius: 50% 50% 50% 50% / 42% 42% 58% 58%;
+      border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: space-between;
       box-shadow: 
-        inset 14px 18px 24px rgba(255, 255, 255, 0.6),
-        inset -12px -16px 28px rgba(0, 0, 0, 0.45),
-        0 24px 38px -10px rgba(15, 23, 42, 0.35);
-      backdrop-filter: blur(2px);
+        inset 16px 20px 28px rgba(255, 255, 255, 0.65),
+        inset -14px -18px 32px rgba(0, 0, 0, 0.45),
+        0 20px 35px -8px rgba(15, 23, 42, 0.4);
+      transform-origin: 50% 90%;
+      transition: transform 0.08s ease-out;
     }
 
-    /* Primary Curved Sun Glint on top left of balloon */
+    /* Top Left Curved Specular Highlight (Sun Reflection) */
     .balloon-glint {
       position: absolute;
-      top: 10%;
+      top: 9%;
       left: 12%;
       width: 32%;
-      height: 25%;
+      height: 24%;
       border-radius: 50%;
-      background: radial-gradient(ellipse at 30% 30%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.4) 45%, rgba(255, 255, 255, 0) 75%);
-      transform: rotate(-35deg);
+      background: radial-gradient(ellipse at 30% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.45) 45%, rgba(255, 255, 255, 0) 78%);
+      transform: rotate(-32deg);
       pointer-events: none;
     }
-    /* Secondary rim reflection */
+    /* Sky Rim Reflection */
     .balloon-rim-light {
       position: absolute;
       bottom: 12%;
-      right: 12%;
-      width: 25%;
-      height: 20%;
+      right: 10%;
+      width: 28%;
+      height: 22%;
       border-radius: 50%;
-      background: radial-gradient(ellipse, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0) 70%);
+      background: radial-gradient(ellipse, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0) 70%);
       transform: rotate(45deg);
       pointer-events: none;
     }
 
+    /* Crimped Realistic Latex Knot */
     .balloon-tied-knot {
       position: absolute;
       bottom: -6px;
       left: 50%;
       transform: translateX(-50%);
-      width: 14px;
-      height: 10px;
-      border-radius: 3px 3px 6px 6px;
-      box-shadow: inset 0 -2px 4px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0,0,0,0.2);
+      width: 15px;
+      height: 11px;
+      border-radius: 3px 3px 7px 7px;
+      box-shadow: inset 0 -3px 5px rgba(0, 0, 0, 0.55), 0 2px 4px rgba(0,0,0,0.25);
     }
 
-    /* Wavy fluttering string */
-    .balloon-string-svg {
+    /* Dynamic Canvas Layer for Multi-Segment Verlet Strings */
+    #verletStringsCanvas {
       position: absolute;
-      top: 98%;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 24px;
-      height: 70px;
+      inset: 0;
+      width: 100%;
+      height: 100%;
       pointer-events: none;
-      overflow: visible;
+      z-index: 15;
     }
 
     /* Popping Animation */
     .bursting {
-      animation: popBurst 0.22s cubic-bezier(0.1, 0.9, 0.2, 1) forwards !important;
+      animation: popBurst 0.18s cubic-bezier(0.1, 0.9, 0.2, 1) forwards !important;
       pointer-events: none;
     }
     @keyframes popBurst {
-      0% { transform: translate3d(-50%, -50%, 0) scale(1); opacity: 1; filter: brightness(1.2); }
-      40% { transform: translate3d(-50%, -50%, 0) scale(1.45); opacity: 0.9; }
-      100% { transform: translate3d(-50%, -50%, 0) scale(2.2); opacity: 0; filter: blur(4px); }
+      0% { transform: scale(1); opacity: 1; filter: brightness(1.3); }
+      40% { transform: scale(1.45); opacity: 0.9; }
+      100% { transform: scale(2.4); opacity: 0; filter: blur(6px); }
     }
 
     /* Glass Panels */
     .glass-sky-panel {
-      background: rgba(255, 255, 255, 0.72);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.85);
-      box-shadow: 0 20px 45px -10px rgba(14, 116, 144, 0.25);
+      background: rgba(255, 255, 255, 0.76);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 0 25px 50px -12px rgba(14, 116, 144, 0.3);
     }
     .glass-dark-panel {
-      background: rgba(15, 23, 42, 0.78);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(15, 23, 42, 0.82);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.16);
     }
   </style>
 </head>
@@ -449,6 +450,8 @@
 
     <!-- Active Floating Balloon Physics Stage -->
     <div id="balloonSkyStage" class="relative w-full h-full z-10 overflow-hidden pointer-events-auto">
+      <!-- Verlet Strings Canvas Layer -->
+      <canvas id="verletStringsCanvas"></canvas>
       <!-- 3D Balloons drift dynamically here -->
     </div>
 
@@ -606,7 +609,7 @@
         knotColor: '#9f1239',
         badgeBg: 'rgba(136, 19, 55, 0.45)',
         textColor: '#ffffff',
-        stringColor: 'rgba(255, 255, 255, 0.7)',
+        stringColor: 'rgba(255, 255, 255, 0.85)',
         confettiColors: ['#ff4d6d', '#f43f5e', '#ffffff', '#ffe4e6']
       },
       {
@@ -616,7 +619,7 @@
         knotColor: '#075985',
         badgeBg: 'rgba(3, 105, 161, 0.45)',
         textColor: '#ffffff',
-        stringColor: 'rgba(255, 255, 255, 0.7)',
+        stringColor: 'rgba(255, 255, 255, 0.85)',
         confettiColors: ['#38bdf8', '#0284c7', '#ffffff', '#e0f2fe']
       },
       {
@@ -626,7 +629,7 @@
         knotColor: '#a16207',
         badgeBg: 'rgba(113, 63, 18, 0.45)',
         textColor: '#ffffff',
-        stringColor: 'rgba(255, 255, 255, 0.8)',
+        stringColor: 'rgba(255, 255, 255, 0.9)',
         confettiColors: ['#fde047', '#eab308', '#ffffff', '#fef9c3']
       },
       {
@@ -636,38 +639,38 @@
         knotColor: '#065f46',
         badgeBg: 'rgba(6, 78, 59, 0.45)',
         textColor: '#ffffff',
-        stringColor: 'rgba(255, 255, 255, 0.7)',
+        stringColor: 'rgba(255, 255, 255, 0.85)',
         confettiColors: ['#4ade80', '#10b981', '#ffffff', '#dcfce7']
       },
       {
         id: 'purple',
-        name: 'Cosmic Violet',
+        name: 'Electric Violet',
         bg: 'radial-gradient(circle at 35% 30%, #c084fc 0%, #8b5cf6 35%, #6d28d9 75%, #4c1d95 100%)',
         knotColor: '#5b21b6',
         badgeBg: 'rgba(76, 29, 149, 0.45)',
         textColor: '#ffffff',
-        stringColor: 'rgba(255, 255, 255, 0.7)',
+        stringColor: 'rgba(255, 255, 255, 0.85)',
         confettiColors: ['#c084fc', '#8b5cf6', '#ffffff', '#f3e8ff']
       },
       {
         id: 'coral',
-        name: 'Sunset Coral',
+        name: 'Sunset Orange',
         bg: 'radial-gradient(circle at 35% 30%, #fb923c 0%, #f97316 35%, #ea580c 75%, #9a3412 100%)',
         knotColor: '#c2410c',
         badgeBg: 'rgba(154, 52, 18, 0.45)',
         textColor: '#ffffff',
-        stringColor: 'rgba(255, 255, 255, 0.7)',
+        stringColor: 'rgba(255, 255, 255, 0.85)',
         confettiColors: ['#fb923c', '#f97316', '#ffffff', '#ffedd5']
       },
       {
         id: 'pearl',
-        name: 'Pearl White',
-        bg: 'radial-gradient(circle at 35% 30%, #ffffff 0%, #f1f5f9 35%, #cbd5e1 75%, #94a3b8 100%)',
-        knotColor: '#64748b',
-        badgeBg: 'rgba(71, 85, 105, 0.45)',
+        name: 'Rose Pearl',
+        bg: 'radial-gradient(circle at 35% 30%, #fed7aa 0%, #fbcfe8 35%, #cbd5e1 75%, #94a3b8 100%)',
+        knotColor: '#9f1239',
+        badgeBg: 'rgba(159, 18, 57, 0.35)',
         textColor: '#0f172a',
-        stringColor: 'rgba(100, 116, 139, 0.6)',
-        confettiColors: ['#ffffff', '#cbd5e1', '#38bdf8', '#f8fafc']
+        stringColor: 'rgba(100, 116, 139, 0.75)',
+        confettiColors: ['#ffffff', '#fbcfe8', '#38bdf8', '#f8fafc']
       }
     ];
 
@@ -709,7 +712,6 @@
       setupWindBreeze() {
         if (!this.ctx) return;
         try {
-          // Generate realistic gentle breeze using filtered pink/white noise
           const bufferSize = this.ctx.sampleRate * 2;
           const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
           const output = noiseBuffer.getChannelData(0);
@@ -743,14 +745,14 @@
           const osc = this.ctx.createOscillator();
           const gain = this.ctx.createGain();
           osc.type = 'sine';
-          osc.frequency.setValueAtTime(220, t);
-          osc.frequency.exponentialRampToValueAtTime(750, t + 0.38);
+          osc.frequency.setValueAtTime(200, t);
+          osc.frequency.exponentialRampToValueAtTime(700, t + 0.4);
           gain.gain.setValueAtTime(0.25, t);
-          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.42);
           osc.connect(gain);
           gain.connect(this.ctx.destination);
           osc.start(t);
-          osc.stop(t + 0.42);
+          osc.stop(t + 0.45);
         } catch (e) {}
       }
       playPopSound() {
@@ -759,21 +761,21 @@
         if (!this.ctx) return;
         try {
           const t = this.ctx.currentTime;
-          // Dual frequency attack for physical rubber snap
+          // Dual frequency attack for instantaneous high pressure rubber rupture
           const osc1 = this.ctx.createOscillator();
           const osc2 = this.ctx.createOscillator();
           const gain = this.ctx.createGain();
 
           osc1.type = 'triangle';
-          osc1.frequency.setValueAtTime(380, t);
-          osc1.frequency.exponentialRampToValueAtTime(45, t + 0.12);
+          osc1.frequency.setValueAtTime(420, t);
+          osc1.frequency.exponentialRampToValueAtTime(35, t + 0.12);
 
           osc2.type = 'sine';
-          osc2.frequency.setValueAtTime(620, t);
-          osc2.frequency.exponentialRampToValueAtTime(50, t + 0.09);
+          osc2.frequency.setValueAtTime(680, t);
+          osc2.frequency.exponentialRampToValueAtTime(45, t + 0.09);
 
-          gain.gain.setValueAtTime(0.7, t);
-          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+          gain.gain.setValueAtTime(0.85, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
 
           osc1.connect(gain);
           osc2.connect(gain);
@@ -781,8 +783,8 @@
 
           osc1.start(t);
           osc2.start(t);
-          osc1.stop(t + 0.16);
-          osc2.stop(t + 0.16);
+          osc1.stop(t + 0.15);
+          osc2.stop(t + 0.15);
         } catch (e) {}
       }
       setMuted(muted) {
@@ -842,7 +844,6 @@
         const pos = getPointerCoordinates(e);
         activeStrokePoints.push({ x: pos.x, y: pos.y });
 
-        // Smooth Bézier curve interpolation
         if (activeStrokePoints.length > 2) {
           const p1 = activeStrokePoints[activeStrokePoints.length - 2];
           const p2 = activeStrokePoints[activeStrokePoints.length - 1];
@@ -934,7 +935,6 @@
       }
     };
 
-    // Compact vector SVG path generator (<1.5KB for ultra-fast instant cloud sync)
     function generateCrispSignatureSVG() {
       if (!signatureStrokes || signatureStrokes.length === 0) return null;
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -992,8 +992,6 @@
         card.title = theme.name;
         card.className = `h-11 rounded-2xl border-2 transition transform relative shadow-sm ${index === 0 ? 'border-sky-500 scale-105 ring-2 ring-sky-400/40' : 'border-transparent opacity-85 hover:opacity-100 hover:scale-102'}`;
         card.style.background = theme.bg;
-
-        // Tiny glint preview
         card.innerHTML = `<span class="absolute top-1.5 left-2 w-2 h-2 rounded-full bg-white/70"></span>`;
 
         card.onclick = () => {
@@ -1034,12 +1032,10 @@
           cloud.x += cloud.speed;
           if (cloud.x - cloud.width > cloudCanvas.width) {
             cloud.x = -cloud.width - 50;
-            cloud.y = Math.random() * (cloudCanvas.height * 0.6);
+            cloud.y = Math.random() * (cloudCanvas.height * 0.55);
           }
 
-          // Draw volumetric cloud clumps
           cloudCtx.save();
-          cloudCtx.fillStyle = cloud.gradient;
           cloud.circles.forEach(c => {
             cloudCtx.beginPath();
             cloudCtx.arc(cloud.x + c.offsetX, cloud.y + c.offsetY, c.radius, 0, Math.PI * 2);
@@ -1072,9 +1068,9 @@
 
       return {
         x: startX,
-        y: Math.random() * (window.innerHeight * 0.5),
+        y: Math.random() * (window.innerHeight * 0.48),
         width: width,
-        speed: Math.random() * 0.35 + 0.15,
+        speed: Math.random() * 0.28 + 0.12,
         baseAlpha: Math.random() * 0.45 + 0.35,
         circles: circles
       };
@@ -1087,8 +1083,23 @@
     }
 
     /* ========================================================================= */
-    /* 3D FLOATING BALLOON ENTITY (Anti-Gravity Lift & Wind Turbulence Physics)  */
+    /* ULTRA-REALISTIC HELIUM BALLOON & MULTI-SEGMENT VERLET STRING PHYSICS      */
     /* ========================================================================= */
+    let verletCanvas, verletCtx;
+
+    function initVerletCanvas() {
+      verletCanvas = document.getElementById('verletStringsCanvas');
+      if (!verletCanvas) return;
+      verletCtx = verletCanvas.getContext('2d');
+      resizeVerletCanvas();
+    }
+
+    function resizeVerletCanvas() {
+      if (!verletCanvas) return;
+      verletCanvas.width = window.innerWidth;
+      verletCanvas.height = window.innerHeight;
+    }
+
     class FloatingSkyBalloon {
       constructor(data, startFromBottom = true) {
         this.data = data;
@@ -1100,42 +1111,72 @@
           h: stage ? stage.clientHeight : window.innerHeight
         };
 
-        // Realistic proportions
-        this.width = Math.min(260, Math.max(200, this.stageBounds.w * 0.16));
-        this.height = this.width * 1.32;
+        // Realistic helium balloon dimensions
+        this.width = Math.min(250, Math.max(190, this.stageBounds.w * 0.15));
+        this.height = this.width * 1.30;
+        this.radius = this.width * 0.46; // Collision radius
 
         if (startFromBottom) {
-          this.x = Math.random() * (this.stageBounds.w - this.width - 60) + 30;
-          this.y = this.stageBounds.h + 50;
+          this.x = Math.random() * (this.stageBounds.w - this.width - 80) + 40;
+          this.y = this.stageBounds.h + 80;
         } else {
-          this.x = Math.random() * (this.stageBounds.w - this.width - 60) + 30;
-          this.y = Math.random() * (this.stageBounds.h - this.height - 180) + 90;
+          this.x = Math.random() * (this.stageBounds.w - this.width - 80) + 40;
+          this.y = Math.random() * (this.stageBounds.h * 0.4) + 100;
         }
 
-        // Natural buoyancy velocities
-        this.vx = (Math.random() - 0.5) * 0.4;
-        this.vy = -(Math.random() * 0.45 + 0.38);
-        this.tilt = (Math.random() - 0.5) * 6;
-        this.tiltSpeed = (Math.random() - 0.5) * 0.035;
-        this.windPhase = Math.random() * Math.PI * 2;
+        // True Archimedes Buoyancy & Dynamic Physics Parameters
+        this.mass = 1.0;
+        this.buoyancy = -0.58; // Net upward acceleration (Archimedes lift over gravity)
+        this.vx = (Math.random() - 0.5) * 1.2;
+        this.vy = startFromBottom ? -4.5 : -0.5; // Initial launch surge
+        this.dragCoefficient = 0.038; // Aerodynamic quadratic/linear dampening
+
+        // Tilt & Angular Dynamics
+        this.tilt = (Math.random() - 0.5) * 5;
+        this.angularVelocity = 0;
+        this.squashX = 1.0;
+        this.squashY = 1.0;
+
+        // Interactive Tether Interaction (Grab, Drag & Slingshot)
+        this.isDragging = false;
+        this.dragPointerId = null;
+        this.dragOffsetX = 0;
+        this.dragOffsetY = 0;
+        this.prevDragX = this.x;
+        this.prevDragY = this.y;
         this.isPopping = false;
 
+        // Multi-Segment Verlet Rope / String (7 nodes)
+        this.stringSegments = 7;
+        this.segmentLength = 11;
+        this.ropeNodes = [];
+        const startKnotX = this.x + this.width / 2;
+        const startKnotY = this.y + this.height - 4;
+
+        for (let i = 0; i <= this.stringSegments; i++) {
+          this.ropeNodes.push({
+            x: startKnotX,
+            y: startKnotY + (i * this.segmentLength),
+            oldX: startKnotX,
+            oldY: startKnotY + (i * this.segmentLength)
+          });
+        }
+
         this.domElement = this.buildDOM();
+        this.setupTetherInteraction();
       }
 
       buildDOM() {
         const theme = this.data.theme || BALLOON_THEMES[0];
         const wrapper = document.createElement('div');
         wrapper.id = `balloon_${this.id}`;
-        wrapper.className = 'balloon-wrapper select-none will-change-transform';
+        wrapper.className = 'balloon-wrapper will-change-transform';
         wrapper.style.width = `${this.width}px`;
-        wrapper.style.transform = `translate3d(${this.x}px, ${this.y}px, 0px) rotate(${this.tilt}deg)`;
-
-        // SVG String curve
-        const stringStrokeColor = theme.stringColor || 'rgba(255, 255, 255, 0.7)';
+        wrapper.style.transform = `translate3d(${this.x.toFixed(1)}px, ${this.y.toFixed(1)}px, 0px) rotate(${this.tilt.toFixed(1)}deg)`;
 
         wrapper.innerHTML = `
           <div class="balloon-egg p-5 text-center" 
+               id="egg_${this.id}"
                style="background: ${theme.bg}; min-height: ${this.height}px; color: ${theme.textColor};">
             
             <!-- Curved Specular Sun Glint & Rim Reflections -->
@@ -1143,84 +1184,283 @@
             <div class="balloon-rim-light"></div>
 
             <!-- Top Tag on Balloon -->
-            <div class="w-full flex items-center justify-between z-10">
-              <span class="text-[10px] uppercase font-display font-extrabold px-2.5 py-0.5 rounded-full" 
-                    style="background: ${theme.badgeBg}; border: 1px solid rgba(255,255,255,0.25);">
-                Exhibition Guest
+            <div class="w-full flex items-center justify-between z-10 pointer-events-none">
+              <span class="text-[9px] uppercase font-display font-extrabold px-2.5 py-0.5 rounded-full" 
+                    style="background: ${theme.badgeBg}; border: 1px solid rgba(255,255,255,0.3);">
+                Helium Live
               </span>
-              <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full"
-                    style="background: ${theme.badgeBg}; border: 1px solid rgba(255,255,255,0.25);">
-                <i data-lucide="wind" class="w-2.5 h-2.5 inline mr-0.5"></i> Live
+              <span class="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full"
+                    style="background: ${theme.badgeBg}; border: 1px solid rgba(255,255,255,0.3);">
+                <i data-lucide="wind" class="w-2.5 h-2.5 inline mr-0.5"></i> Drift
               </span>
             </div>
 
-            <!-- Digital Signature Graphic + Printed Full Name -->
-            <div class="my-auto w-full z-10 flex flex-col items-center justify-center px-1">
-              <div class="w-full max-h-24 py-1 flex items-center justify-center">
-                <img src="${this.data.signatureUrl}" alt="Signature" class="max-h-20 max-w-[94%] object-contain filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.55)] pointer-events-none" />
+            <!-- Curvature Projected Vector Signature + Name -->
+            <div class="my-auto w-full z-10 flex flex-col items-center justify-center px-1 pointer-events-none" style="transform: perspective(280px) rotateX(6deg);">
+              <div class="w-full max-h-20 py-1 flex items-center justify-center">
+                <img src="${this.data.signatureUrl}" alt="Signature" class="max-h-16 max-w-[92%] object-contain filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.55)]" />
               </div>
 
-              <div class="w-4/5 border-b border-white/30 my-1"></div>
+              <div class="w-3/4 border-b border-white/35 my-1"></div>
 
-              <h3 class="font-extrabold text-base tracking-wide truncate w-full px-1 drop-shadow-md">
+              <h3 class="font-extrabold text-sm sm:text-base tracking-wide truncate w-full px-1 drop-shadow-md">
                 ${escapeHtml(this.data.name)}
               </h3>
 
               ${this.data.organization ? `
-                <p class="text-[11px] font-medium opacity-90 truncate max-w-full px-1 mt-0.5 drop-shadow-sm">
+                <p class="text-[10px] font-medium opacity-90 truncate max-w-full px-1 mt-0.5 drop-shadow-sm">
                   ${escapeHtml(this.data.organization)}
                 </p>
               ` : ''}
             </div>
 
-            <!-- Tied Knot & Floating Hanging String -->
+            <!-- Tied Knot -->
             <div class="balloon-tied-knot" style="background: ${theme.knotColor};"></div>
-            
-            <svg class="balloon-string-svg" viewBox="0 0 24 70">
-              <path d="M 12 0 Q 6 22 16 42 T 12 70" fill="none" stroke="${stringStrokeColor}" stroke-width="2" stroke-linecap="round" />
-            </svg>
           </div>
         `;
-
-        // Interactive touch/click pop event
-        wrapper.addEventListener('click', (e) => {
-          e.stopPropagation();
-          popBalloonAction(this.id);
-        });
 
         return wrapper;
       }
 
-      updatePhysics(bounds) {
+      setupTetherInteraction() {
+        let pointerMoved = false;
+        let startPointerX = 0;
+        let startPointerY = 0;
+
+        const onPointerDown = (e) => {
+          if (this.isPopping) return;
+          this.isDragging = true;
+          this.dragPointerId = e.pointerId;
+          pointerMoved = false;
+          startPointerX = e.clientX;
+          startPointerY = e.clientY;
+
+          this.dragOffsetX = e.clientX - this.x;
+          this.dragOffsetY = e.clientY - this.y;
+          this.prevDragX = this.x;
+          this.prevDragY = this.y;
+          this.domElement.setPointerCapture(e.pointerId);
+          skyAudio.init();
+        };
+
+        const onPointerMove = (e) => {
+          if (!this.isDragging || e.pointerId !== this.dragPointerId) return;
+          const distMoved = Math.hypot(e.clientX - startPointerX, e.clientY - startPointerY);
+          if (distMoved > 6) pointerMoved = true;
+
+          const targetX = e.clientX - this.dragOffsetX;
+          const targetY = e.clientY - this.dragOffsetY;
+
+          // Slingshot velocity calculation
+          this.vx = (targetX - this.prevDragX) * 0.45;
+          this.vy = (targetY - this.prevDragY) * 0.45;
+          this.prevDragX = targetX;
+          this.prevDragY = targetY;
+
+          this.x = targetX;
+          this.y = targetY;
+        };
+
+        const onPointerUp = (e) => {
+          if (!this.isDragging || e.pointerId !== this.dragPointerId) return;
+          this.isDragging = false;
+          try { this.domElement.releasePointerCapture(e.pointerId); } catch (err) {}
+
+          // If simple tap without dragging, trigger burst pop
+          if (!pointerMoved) {
+            popBalloonAction(this.id);
+          } else {
+            // Apply slingshot impulse
+            this.vx = Math.max(-14, Math.min(14, this.vx * 1.4));
+            this.vy = Math.max(-14, Math.min(14, this.vy * 1.4));
+          }
+        };
+
+        this.domElement.addEventListener('pointerdown', onPointerDown);
+        this.domElement.addEventListener('pointermove', onPointerMove);
+        this.domElement.addEventListener('pointerup', onPointerUp);
+        this.domElement.addEventListener('pointercancel', onPointerUp);
+      }
+
+      updatePhysics(bounds, globalWind) {
         if (this.isPopping) return;
         this.stageBounds = bounds;
 
-        this.windPhase += 0.035;
-        const windBreezeDrift = Math.sin(this.windPhase) * 0.55;
+        if (!this.isDragging) {
+          // 1. Archimedes Buoyancy Force Upward vs Mass
+          this.vy += this.buoyancy;
 
-        this.x += this.vx + windBreezeDrift;
-        this.y += this.vy;
-        this.tilt += this.tiltSpeed;
+          // 2. Aerodynamic Quadratic Air Resistance & Drag
+          const speedSq = this.vx * this.vx + this.vy * this.vy;
+          const drag = this.dragCoefficient * speedSq;
+          const speed = Math.sqrt(speedSq) || 1;
+          this.vx -= (this.vx / speed) * drag * 0.35;
+          this.vy -= (this.vy / speed) * drag * 0.35;
 
-        // Stage Boundary Collisions & Bounce
-        if (this.x < 15) {
-          this.x = 15;
-          this.vx = Math.abs(this.vx) * 0.8;
-        } else if (this.x + this.width > this.stageBounds.w - 15) {
-          this.x = this.stageBounds.w - this.width - 15;
-          this.vx = -Math.abs(this.vx) * 0.8;
+          // 3. Natural Sky Wind Turbulence & Draft
+          this.vx += globalWind * 0.22;
+
+          // Position integration
+          this.x += this.vx;
+          this.y += this.vy;
+
+          // 4. Ceiling & Wall Elastic Boundary Cushioning
+          const topCeiling = 75; // Sky ceiling clearance
+          if (this.y < topCeiling) {
+            this.y = topCeiling;
+            this.vy = Math.abs(this.vy) * 0.38 + 0.2; // Spring rebound
+            this.squashY = 0.88; // Squash deformation on ceiling hit
+            this.squashX = 1.12;
+          }
+
+          if (this.x < 15) {
+            this.x = 15;
+            this.vx = Math.abs(this.vx) * 0.65;
+            this.squashX = 0.88;
+          } else if (this.x + this.width > this.stageBounds.w - 15) {
+            this.x = this.stageBounds.w - this.width - 15;
+            this.vx = -Math.abs(this.vx) * 0.65;
+            this.squashX = 0.88;
+          }
+
+          // Bottom ground rebound (if pulled down and released)
+          if (this.y + this.height > this.stageBounds.h - 15) {
+            this.y = this.stageBounds.h - this.height - 15;
+            this.vy = -Math.abs(this.vy) * 0.5 - 1.5; // Rebound up into sky
+          }
+
+          // 5. Angular Torque & Aerodynamic Pendulum Tilt
+          const targetTilt = (this.vx - globalWind) * 3.8;
+          this.tilt += (targetTilt - this.tilt) * 0.1;
         }
 
-        // Soft sky ceiling and floor constraints
-        if (this.y < 85) {
-          this.y = 85;
-          this.vy = Math.abs(this.vy) * 0.5;
-        } else if (this.y + this.height > this.stageBounds.h - 30) {
-          this.y = this.stageBounds.h - this.height - 30;
-          this.vy = -Math.abs(this.vy) * 0.5;
+        // Recover squash & stretch towards equilibrium
+        this.squashX += (1.0 - this.squashX) * 0.12;
+        this.squashY += (1.0 - this.squashY) * 0.12;
+
+        // Render DOM transform
+        this.domElement.style.transform = `translate3d(${this.x.toFixed(1)}px, ${this.y.toFixed(1)}px, 0px) rotate(${this.tilt.toFixed(1)}deg) scale(${this.squashX.toFixed(2)}, ${this.squashY.toFixed(2)})`;
+
+        // 6. Multi-Segment Verlet String Physics Update
+        this.updateVerletString(globalWind);
+      }
+
+      updateVerletString(globalWind) {
+        if (!this.ropeNodes || this.ropeNodes.length === 0) return;
+        const knotX = this.x + this.width / 2;
+        const knotY = this.y + this.height - 4;
+
+        // Node 0 is anchored to the balloon knot
+        this.ropeNodes[0].x = knotX;
+        this.ropeNodes[0].y = knotY;
+
+        // Verlet position update for trailing string nodes
+        for (let i = 1; i < this.ropeNodes.length; i++) {
+          const n = this.ropeNodes[i];
+          const vx = (n.x - n.oldX) * 0.94 + (globalWind * 0.12);
+          const vy = (n.y - n.oldY) * 0.94 + 0.15; // string self-weight downwards
+
+          n.oldX = n.x;
+          n.oldY = n.y;
+          n.x += vx;
+          n.y += vy;
         }
 
-        this.domElement.style.transform = `translate3d(${this.x.toFixed(1)}px, ${this.y.toFixed(1)}px, 0px) rotate(${this.tilt.toFixed(1)}deg)`;
+        // Distance constraint satisfaction (3 iterations for rope stiffness)
+        for (let iter = 0; iter < 3; iter++) {
+          for (let i = 0; i < this.ropeNodes.length - 1; i++) {
+            const p1 = this.ropeNodes[i];
+            const p2 = this.ropeNodes[i + 1];
+            const dx = p2.x - p1.x;
+            const dy = p2.y - p1.y;
+            const dist = Math.hypot(dx, dy) || 0.001;
+            const diff = (dist - this.segmentLength) / dist;
+
+            if (i === 0) {
+              p2.x -= dx * diff;
+              p2.y -= dy * diff;
+            } else {
+              p1.x += dx * diff * 0.5;
+              p1.y += dy * diff * 0.5;
+              p2.x -= dx * diff * 0.5;
+              p2.y -= dy * diff * 0.5;
+            }
+          }
+        }
+      }
+
+      drawVerletString(ctx) {
+        if (!ctx || this.isPopping || !this.ropeNodes || this.ropeNodes.length < 2) return;
+        const theme = this.data.theme || BALLOON_THEMES[0];
+        ctx.beginPath();
+        ctx.moveTo(this.ropeNodes[0].x, this.ropeNodes[0].y);
+
+        // Smooth Bézier curve through rope nodes
+        for (let i = 1; i < this.ropeNodes.length - 1; i++) {
+          const xc = (this.ropeNodes[i].x + this.ropeNodes[i + 1].x) / 2;
+          const yc = (this.ropeNodes[i].y + this.ropeNodes[i + 1].y) / 2;
+          ctx.quadraticCurveTo(this.ropeNodes[i].x, this.ropeNodes[i].y, xc, yc);
+        }
+        ctx.lineTo(this.ropeNodes[this.ropeNodes.length - 1].x, this.ropeNodes[this.ropeNodes.length - 1].y);
+
+        ctx.strokeStyle = theme.stringColor || 'rgba(255, 255, 255, 0.85)';
+        ctx.lineWidth = 1.8;
+        ctx.lineCap = 'round';
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
+        ctx.shadowBlur = 4;
+        ctx.stroke();
+      }
+    }
+
+    /* ========================================================================= */
+    /* ELASTIC BALLOON-TO-BALLOON COLLISION RESOLUTION                           */
+    /* ========================================================================= */
+    function resolveBalloonCollisions(entities) {
+      for (let i = 0; i < entities.length; i++) {
+        for (let j = i + 1; j < entities.length; j++) {
+          const b1 = entities[i];
+          const b2 = entities[j];
+          if (b1.isPopping || b2.isPopping) continue;
+
+          // Centers of balloon spheroids
+          const c1x = b1.x + b1.width / 2;
+          const c1y = b1.y + b1.height * 0.45;
+          const c2x = b2.x + b2.width / 2;
+          const c2y = b2.y + b2.height * 0.45;
+
+          const dx = c2x - c1x;
+          const dy = c2y - c1y;
+          const dist = Math.hypot(dx, dy);
+          const minDist = b1.radius + b2.radius;
+
+          if (dist < minDist && dist > 0.001) {
+            const overlap = (minDist - dist);
+            const nx = dx / dist;
+            const ny = dy / dist;
+
+            // Separate overlapping spheroids
+            b1.x -= nx * overlap * 0.5;
+            b1.y -= ny * overlap * 0.5;
+            b2.x += nx * overlap * 0.5;
+            b2.y += ny * overlap * 0.5;
+
+            // Elastic velocity exchange (Restitution = 0.75)
+            const kx = b1.vx - b2.vx;
+            const ky = b1.vy - b2.vy;
+            const p = 2 * (nx * kx + ny * ky) / 2;
+
+            b1.vx -= p * nx * 0.75;
+            b1.vy -= p * ny * 0.75;
+            b2.vx += p * nx * 0.75;
+            b2.vy += p * ny * 0.75;
+
+            // Squash & stretch deformation upon impact
+            b1.squashX = 0.92;
+            b1.squashY = 1.08;
+            b2.squashX = 0.92;
+            b2.squashY = 1.08;
+          }
+        }
       }
     }
 
@@ -1235,17 +1475,38 @@
       lucide.createIcons();
     }
 
+    let globalWindTime = 0;
     function startBalloonPhysicsLoop() {
       const stage = document.getElementById('balloonSkyStage');
+
       function tick() {
         if (isCurrentDisplayScreenActive() && stage) {
           const bounds = {
             w: stage.clientWidth || window.innerWidth,
             h: stage.clientHeight || window.innerHeight
           };
-          balloonEntitiesMap.forEach(entity => {
-            entity.updatePhysics(bounds);
+
+          // Continuous organic wind gust draft (sinusoidal combination)
+          globalWindTime += 0.02;
+          const windGust = Math.sin(globalWindTime) * 0.4 + Math.sin(globalWindTime * 0.35) * 0.25;
+
+          const entities = Array.from(balloonEntitiesMap.values());
+
+          // 1. Update individual balloon & string physics
+          entities.forEach(entity => {
+            entity.updatePhysics(bounds, windGust);
           });
+
+          // 2. Resolve elastic inter-balloon collisions
+          resolveBalloonCollisions(entities);
+
+          // 3. Render all Verlet strings onto dedicated 60 FPS canvas layer
+          if (verletCtx && verletCanvas) {
+            verletCtx.clearRect(0, 0, verletCanvas.width, verletCanvas.height);
+            entities.forEach(entity => {
+              entity.drawVerletString(verletCtx);
+            });
+          }
         }
         requestAnimationFrame(tick);
       }
@@ -1290,20 +1551,20 @@
         balloonEntitiesMap.delete(balloonId);
         activeBalloonsMap.delete(balloonId);
         updateCountersHUD();
-      }, 230);
+      }, 200);
     }
 
     function triggerSkyBurstConfetti(x, y, theme) {
       if (typeof confetti !== 'function') return;
       const colors = theme && theme.confettiColors ? theme.confettiColors : ['#38bdf8', '#f43f5e', '#ffffff', '#fde047'];
       confetti({
-        particleCount: 55,
-        spread: 75,
+        particleCount: 60,
+        spread: 80,
         origin: { x, y },
         colors: colors,
-        startVelocity: 28,
-        gravity: 0.92,
-        ticks: 130
+        startVelocity: 30,
+        gravity: 0.95,
+        ticks: 140
       });
     }
 
@@ -1386,7 +1647,6 @@
           const topic = getRoomTopic(currentRoomCode);
           mqttClient.subscribe(topic, { qos: 1 });
 
-          // Request state hydration from active displays
           broadcastRealtimePayload({
             type: 'REQUEST_ROOM_SYNC',
             sender: clientId,
@@ -1420,12 +1680,10 @@
       msg.roomCode = currentRoomCode.toUpperCase();
       msg.timestamp = Date.now();
 
-      // Inter-tab / local window fallback
       if (window.localChan) {
         try { window.localChan.postMessage(msg); } catch (e) {}
       }
 
-      // Worldwide cloud sync over MQTT WebSockets
       if (mqttClient && mqttClient.connected) {
         const topic = getRoomTopic(currentRoomCode);
         mqttClient.publish(topic, JSON.stringify(msg), { qos: 1 });
@@ -1439,7 +1697,6 @@
         const balloon = msg.balloon;
         activeBalloonsMap.set(balloon.id, balloon);
         
-        // Add to permanent registry if not duplicate
         if (!guestbookRegistry.some(g => g.id === balloon.id)) {
           guestbookRegistry.push(balloon);
         }
@@ -1454,7 +1711,6 @@
       else if (msg.type === 'POP_BALLOON' && msg.balloonId) {
         triggerLocalBalloonPop(msg.balloonId);
         activeBalloonsMap.delete(msg.balloonId);
-        // Mark in permanent registry as popped
         const regItem = guestbookRegistry.find(g => g.id === msg.balloonId);
         if (regItem) regItem.popped = true;
         saveLocalRoomStorage();
@@ -1524,7 +1780,6 @@
 
       if (!name) return;
 
-      // Extract vector SVG signature
       let signatureUrl = generateCrispSignatureSVG();
       if (!signatureUrl) {
         signatureUrl = generateCursiveFallbackSignature(name);
@@ -1543,13 +1798,11 @@
         popped: false
       };
 
-      // Add to local state and permanent ledger
       activeBalloonsMap.set(balloonId, balloonRecord);
       guestbookRegistry.push(balloonRecord);
       saveLocalRoomStorage();
       updateCountersHUD();
 
-      // Transmit to big display and connected laptops instantly
       broadcastRealtimePayload({
         type: 'NEW_BALLOON',
         balloon: balloonRecord,
@@ -1624,7 +1877,7 @@
         const pageHeight = pdf.internal.pageSize.getHeight();
 
         // Header Background
-        pdf.setFillColor(14, 165, 233); // sky-500
+        pdf.setFillColor(14, 165, 233);
         pdf.rect(0, 0, pageWidth, 45, 'F');
 
         // Document Title
@@ -1640,7 +1893,6 @@
         pdf.text(`Event Room Code: ${currentRoomCode}   |   Exported: ${new Date().toLocaleString()}`, 14, 29);
         pdf.text(`Total Attendees Recorded: ${guestbookRegistry.length}`, 14, 37);
 
-        // 2-Column Grid of Guest Cards
         const marginX = 14;
         let currentY = 56;
         const columnWidth = (pageWidth - (marginX * 2) - 8) / 2;
@@ -1651,25 +1903,21 @@
           const isRightCol = i % 2 !== 0;
           const currentX = isRightCol ? marginX + columnWidth + 8 : marginX;
 
-          // Card Background & Border
           pdf.setFillColor(248, 250, 252);
           pdf.setDrawColor(226, 232, 240);
           pdf.roundedRect(currentX, currentY, columnWidth, cardHeight, 3, 3, 'FD');
 
-          // Guest Full Name
           pdf.setFont('helvetica', 'bold');
           pdf.setFontSize(11);
           pdf.setTextColor(15, 23, 42);
           pdf.text(pdf.splitTextToSize(entry.name, columnWidth - 8)[0], currentX + 5, currentY + 8);
 
-          // Affiliation & Timestamp
           pdf.setFont('helvetica', 'normal');
           pdf.setFontSize(8);
           pdf.setTextColor(100, 116, 139);
           const metaLine = `${entry.organization ? entry.organization + ' • ' : ''}${entry.dateString || ''} ${entry.timestamp || ''}`;
           pdf.text(pdf.splitTextToSize(metaLine, columnWidth - 8)[0], currentX + 5, currentY + 13);
 
-          // Vector Signature Embedded into card
           if (entry.signatureUrl) {
             try {
               const signatureImg = await loadSignatureImageBitmap(entry.signatureUrl);
@@ -1677,10 +1925,8 @@
             } catch (err) {}
           }
 
-          // Advance row on every second column
           if (isRightCol) {
             currentY += cardHeight + 6;
-            // Page Break Check
             if (currentY + cardHeight > pageHeight - 16) {
               pdf.addPage();
               currentY = 20;
@@ -1688,7 +1934,6 @@
           }
         }
 
-        // Add Page Numbers
         const totalPages = pdf.internal.getNumberOfPages();
         for (let p = 1; p <= totalPages; p++) {
           pdf.setPage(p);
@@ -1697,7 +1942,6 @@
           pdf.text(`Page ${p} of ${totalPages}  •  Exhibition Guestbook Ledger`, pageWidth - 32, pageHeight - 7, { align: 'right' });
         }
 
-        // Save PDF to Computer
         pdf.save(`Exhibition-Guestbook-${currentRoomCode}-${Date.now()}.pdf`);
 
       } catch (err) {
@@ -1721,19 +1965,16 @@
           ctx.fillStyle = '#ffffff';
           ctx.fillRect(0, 0, 300, 120);
 
-          // Render dark ink for crisp print on paper
           ctx.drawImage(img, 10, 10, 280, 100);
 
-          // Invert or adjust ink contrast if needed
           const imgData = ctx.getImageData(0, 0, 300, 120);
           for (let i = 0; i < imgData.data.length; i += 4) {
-            // Convert white background lines into dark blue ink
             if (imgData.data[i] > 180 && imgData.data[i+1] > 180 && imgData.data[i+2] > 180) {
               imgData.data[i] = 255;
               imgData.data[i+1] = 255;
               imgData.data[i+2] = 255;
             } else {
-              imgData.data[i] = 14;     // dark ink
+              imgData.data[i] = 14;
               imgData.data[i+1] = 40;
               imgData.data[i+2] = 90;
             }
@@ -1882,7 +2123,7 @@
         btnLaptop.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1 text-slate-600 hover:text-slate-900';
 
         resizeCloudCanvas();
-        // Spawn active balloons onto stage
+        resizeVerletCanvas();
         activeBalloonsMap.forEach((balloon) => {
           if (!balloonEntitiesMap.has(balloon.id)) {
             spawnBalloonOnWall(balloon, false);
@@ -1971,13 +2212,11 @@
       document.getElementById('headerRoomText').textContent = currentRoomCode;
       document.getElementById('btnTargetRoomText').textContent = currentRoomCode;
 
-      // Clear existing entities
       balloonEntitiesMap.forEach(e => {
         if (e.domElement && e.domElement.parentNode) e.domElement.parentNode.removeChild(e.domElement);
       });
       balloonEntitiesMap.clear();
 
-      // Load storage for new room
       loadLocalRoomStorage();
       updateCountersHUD();
 
@@ -1985,7 +2224,6 @@
       url.searchParams.set('room', currentRoomCode);
       window.history.replaceState({}, '', url.toString());
 
-      // Re-subscribe MQTT channel
       if (mqttClient && mqttClient.connected) {
         const topic = getRoomTopic(currentRoomCode);
         mqttClient.subscribe(topic, { qos: 1 });
@@ -2030,6 +2268,7 @@
       renderColorPaletteCards();
       initSignaturePad();
       initCloudCanvas();
+      initVerletCanvas();
       startBalloonPhysicsLoop();
       initCloudSync();
       updateWallClock();
@@ -2043,6 +2282,7 @@
       window.addEventListener('resize', () => {
         if (isCurrentDisplayScreenActive()) {
           resizeCloudCanvas();
+          resizeVerletCanvas();
         } else {
           resizeSignaturePad();
         }
@@ -2051,4 +2291,3 @@
   </script>
 </body>
 </html>
-```
