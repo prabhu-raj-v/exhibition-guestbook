@@ -599,204 +599,7 @@
 
   <script>
     /* ========================================================================= */
-    /* REALISTIC 3D BALLOON COLOR PALETTES (Translucent Latex Festival Shading)  */
-    /* ========================================================================= */
-    const BALLOON_THEMES = [
-      {
-        id: 'ruby',
-        name: 'Ruby Crimson',
-        bg: 'radial-gradient(circle at 35% 30%, #ff5277 0%, #f43f5e 35%, #be123c 75%, #881337 100%)',
-        knotColor: '#9f1239',
-        badgeBg: 'rgba(136, 19, 55, 0.45)',
-        textColor: '#ffffff',
-        stringColor: 'rgba(255, 255, 255, 0.85)',
-        confettiColors: ['#ff4d6d', '#f43f5e', '#ffffff', '#ffe4e6']
-      },
-      {
-        id: 'azure',
-        name: 'Azure Cyan',
-        bg: 'radial-gradient(circle at 35% 30%, #38bdf8 0%, #0284c7 40%, #0369a1 75%, #075985 100%)',
-        knotColor: '#075985',
-        badgeBg: 'rgba(3, 105, 161, 0.45)',
-        textColor: '#ffffff',
-        stringColor: 'rgba(255, 255, 255, 0.85)',
-        confettiColors: ['#38bdf8', '#0284c7', '#ffffff', '#e0f2fe']
-      },
-      {
-        id: 'sunflower',
-        name: 'Sunflower Gold',
-        bg: 'radial-gradient(circle at 35% 30%, #fef08a 0%, #eab308 35%, #ca8a04 75%, #854d0e 100%)',
-        knotColor: '#a16207',
-        badgeBg: 'rgba(113, 63, 18, 0.45)',
-        textColor: '#ffffff',
-        stringColor: 'rgba(255, 255, 255, 0.9)',
-        confettiColors: ['#fde047', '#eab308', '#ffffff', '#fef9c3']
-      },
-      {
-        id: 'emerald',
-        name: 'Emerald Jade',
-        bg: 'radial-gradient(circle at 35% 30%, #4ade80 0%, #10b981 35%, #047857 75%, #064e3b 100%)',
-        knotColor: '#065f46',
-        badgeBg: 'rgba(6, 78, 59, 0.45)',
-        textColor: '#ffffff',
-        stringColor: 'rgba(255, 255, 255, 0.85)',
-        confettiColors: ['#4ade80', '#10b981', '#ffffff', '#dcfce7']
-      },
-      {
-        id: 'purple',
-        name: 'Electric Violet',
-        bg: 'radial-gradient(circle at 35% 30%, #c084fc 0%, #8b5cf6 35%, #6d28d9 75%, #4c1d95 100%)',
-        knotColor: '#5b21b6',
-        badgeBg: 'rgba(76, 29, 149, 0.45)',
-        textColor: '#ffffff',
-        stringColor: 'rgba(255, 255, 255, 0.85)',
-        confettiColors: ['#c084fc', '#8b5cf6', '#ffffff', '#f3e8ff']
-      },
-      {
-        id: 'coral',
-        name: 'Sunset Orange',
-        bg: 'radial-gradient(circle at 35% 30%, #fb923c 0%, #f97316 35%, #ea580c 75%, #9a3412 100%)',
-        knotColor: '#c2410c',
-        badgeBg: 'rgba(154, 52, 18, 0.45)',
-        textColor: '#ffffff',
-        stringColor: 'rgba(255, 255, 255, 0.85)',
-        confettiColors: ['#fb923c', '#f97316', '#ffffff', '#ffedd5']
-      },
-      {
-        id: 'pearl',
-        name: 'Rose Pearl',
-        bg: 'radial-gradient(circle at 35% 30%, #fed7aa 0%, #fbcfe8 35%, #cbd5e1 75%, #94a3b8 100%)',
-        knotColor: '#9f1239',
-        badgeBg: 'rgba(159, 18, 57, 0.35)',
-        textColor: '#0f172a',
-        stringColor: 'rgba(100, 116, 139, 0.75)',
-        confettiColors: ['#ffffff', '#fbcfe8', '#38bdf8', '#f8fafc']
-      }
-    ];
-
-    let currentSelectedTheme = BALLOON_THEMES[0];
-    let currentRoomCode = 'EXPO-2026';
-    let currentAdminPin = '1234';
-    let isAdminUnlocked = false;
-    let isSoundMuted = false;
-
-    // State Tracking
-    const activeBalloonsMap = new Map(); // On-screen animated entities
-    const balloonEntitiesMap = new Map();
-    const guestbookRegistry = []; // Permanent ledger for PDF export
-
-    const STORAGE_KEY_PREFIX = 'sky_guestbook_ledger_v3_';
-    const clientId = 'kiosk_client_' + Math.random().toString(36).substring(2, 10);
-
-    /* ========================================================================= */
-    /* WEB AUDIO SYNTHESIZER: High-Fidelity Breeze & Pop Burst Sounds            */
-    /* ========================================================================= */
-    class SkyAudioEngine {
-      constructor() {
-        this.ctx = null;
-        this.windGain = null;
-        this.windNode = null;
-      }
-      init() {
-        if (!this.ctx) {
-          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-          if (AudioContextClass) {
-            this.ctx = new AudioContextClass();
-            this.setupWindBreeze();
-          }
-        }
-        if (this.ctx && this.ctx.state === 'suspended') {
-          this.ctx.resume();
-        }
-      }
-      setupWindBreeze() {
-        if (!this.ctx) return;
-        try {
-          const bufferSize = this.ctx.sampleRate * 2;
-          const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-          const output = noiseBuffer.getChannelData(0);
-          for (let i = 0; i < bufferSize; i++) {
-            output[i] = Math.random() * 2 - 1;
-          }
-
-          const whiteNoise = this.ctx.createBufferSource();
-          whiteNoise.buffer = noiseBuffer;
-          whiteNoise.loop = true;
-
-          const filter = this.ctx.createBiquadFilter();
-          filter.type = 'lowpass';
-          filter.frequency.setValueAtTime(260, this.ctx.currentTime);
-
-          this.windGain = this.ctx.createGain();
-          this.windGain.gain.setValueAtTime(0.015, this.ctx.currentTime);
-
-          whiteNoise.connect(filter);
-          filter.connect(this.windGain);
-          this.windGain.connect(this.ctx.destination);
-          whiteNoise.start();
-        } catch (e) {}
-      }
-      playLaunchWhoosh() {
-        if (isSoundMuted) return;
-        this.init();
-        if (!this.ctx) return;
-        try {
-          const t = this.ctx.currentTime;
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(200, t);
-          osc.frequency.exponentialRampToValueAtTime(700, t + 0.4);
-          gain.gain.setValueAtTime(0.25, t);
-          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.42);
-          osc.connect(gain);
-          gain.connect(this.ctx.destination);
-          osc.start(t);
-          osc.stop(t + 0.45);
-        } catch (e) {}
-      }
-      playPopSound() {
-        if (isSoundMuted) return;
-        this.init();
-        if (!this.ctx) return;
-        try {
-          const t = this.ctx.currentTime;
-          // Dual frequency attack for instantaneous high pressure rubber rupture
-          const osc1 = this.ctx.createOscillator();
-          const osc2 = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-
-          osc1.type = 'triangle';
-          osc1.frequency.setValueAtTime(420, t);
-          osc1.frequency.exponentialRampToValueAtTime(35, t + 0.12);
-
-          osc2.type = 'sine';
-          osc2.frequency.setValueAtTime(680, t);
-          osc2.frequency.exponentialRampToValueAtTime(45, t + 0.09);
-
-          gain.gain.setValueAtTime(0.85, t);
-          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
-
-          osc1.connect(gain);
-          osc2.connect(gain);
-          gain.connect(this.ctx.destination);
-
-          osc1.start(t);
-          osc2.start(t);
-          osc1.stop(t + 0.15);
-          osc2.stop(t + 0.15);
-        } catch (e) {}
-      }
-      setMuted(muted) {
-        if (this.windGain) {
-          this.windGain.gain.setValueAtTime(muted ? 0 : 0.015, this.ctx ? this.ctx.currentTime : 0);
-        }
-      }
-    }
-    const skyAudio = new SkyAudioEngine();
-
-    /* ========================================================================= */
-    /* SIGNATURE DRAWING PAD: Crisp Vector SVG Interpolation                     */
+    /* SIGNATURE DRAWING PAD: Crisp Vector SVG & PDF High-Contrast Capture       */
     /* ========================================================================= */
     let sigCanvas, sigCtx;
     let isDrawing = false;
@@ -968,16 +771,78 @@
       return 'data:image/svg+xml;utf8,' + encodeURIComponent(svgDoc);
     }
 
-    function generateCursiveFallbackSignature(name) {
+    // Generates a crisp, high-resolution dark ink PNG bitmap specifically for PDF embedding
+    function generatePdfSignatureBitmap(strokes) {
+      if (!strokes || strokes.length === 0) return null;
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      strokes.forEach(s => {
+        s.points.forEach(p => {
+          if (p.x < minX) minX = p.x;
+          if (p.y < minY) minY = p.y;
+          if (p.x > maxX) maxX = p.x;
+          if (p.y > maxY) maxY = p.y;
+        });
+      });
+
+      const padding = 16;
+      const rawWidth = Math.max(20, maxX - minX);
+      const rawHeight = Math.max(20, maxY - minY);
+
+      const targetWidth = 480;
+      const targetHeight = 180;
+
+      const offCanvas = document.createElement('canvas');
+      offCanvas.width = targetWidth;
+      offCanvas.height = targetHeight;
+      const octx = offCanvas.getContext('2d');
+
+      // Pristine white background for PDF cards
+      octx.fillStyle = '#ffffff';
+      octx.fillRect(0, 0, targetWidth, targetHeight);
+
+      // Compute uniform scale to preserve signature aspect ratio
+      const scale = Math.min((targetWidth - padding * 2) / rawWidth, (targetHeight - padding * 2) / rawHeight);
+      const renderedWidth = rawWidth * scale;
+      const renderedHeight = rawHeight * scale;
+      const offsetX = (targetWidth - renderedWidth) / 2 - minX * scale;
+      const offsetY = (targetHeight - renderedHeight) / 2 - minY * scale;
+
+      octx.lineWidth = Math.max(2.5, currentStrokeThickness * scale * 0.85);
+      octx.strokeStyle = '#0f172a'; // Deep slate navy ink
+      octx.lineCap = 'round';
+      octx.lineJoin = 'round';
+
+      strokes.forEach(stroke => {
+        if (!stroke.points || stroke.points.length === 0) return;
+        octx.beginPath();
+        octx.moveTo(stroke.points[0].x * scale + offsetX, stroke.points[0].y * scale + offsetY);
+
+        for (let i = 1; i < stroke.points.length; i++) {
+          const pt = stroke.points[i];
+          octx.lineTo(pt.x * scale + offsetX, pt.y * scale + offsetY);
+        }
+        octx.stroke();
+      });
+
+      return offCanvas.toDataURL('image/png');
+    }
+
+    function generateCursiveFallbackSignature(name, isForPdf = false) {
       const off = document.createElement('canvas');
-      off.width = 460;
-      off.height = 140;
+      off.width = 480;
+      off.height = 180;
       const c = off.getContext('2d');
-      c.fillStyle = '#ffffff';
+      if (isForPdf) {
+        c.fillStyle = '#ffffff';
+        c.fillRect(0, 0, 480, 180);
+        c.fillStyle = '#0f172a';
+      } else {
+        c.fillStyle = '#ffffff';
+      }
       c.font = 'italic 54px "Caveat", cursive';
       c.textAlign = 'center';
       c.textBaseline = 'middle';
-      c.fillText(name, 230, 70);
+      c.fillText(name, 240, 90);
       return off.toDataURL('image/png');
     }
 
@@ -1781,8 +1646,15 @@
       if (!name) return;
 
       let signatureUrl = generateCrispSignatureSVG();
+      let pdfSignatureImg = null;
+
+      if (signatureStrokes && signatureStrokes.length > 0) {
+        pdfSignatureImg = generatePdfSignatureBitmap(signatureStrokes);
+      }
+
       if (!signatureUrl) {
-        signatureUrl = generateCursiveFallbackSignature(name);
+        signatureUrl = generateCursiveFallbackSignature(name, false);
+        pdfSignatureImg = generateCursiveFallbackSignature(name, true);
       }
 
       const balloonId = 'balloon_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
@@ -1792,6 +1664,8 @@
         name: name,
         organization: org,
         signatureUrl: signatureUrl,
+        pdfSignatureImg: pdfSignatureImg,
+        strokes: JSON.parse(JSON.stringify(signatureStrokes)),
         theme: currentSelectedTheme,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         dateString: new Date().toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }),
@@ -1896,33 +1770,59 @@
         const marginX = 14;
         let currentY = 56;
         const columnWidth = (pageWidth - (marginX * 2) - 8) / 2;
-        const cardHeight = 36;
+        const cardHeight = 44;
 
         for (let i = 0; i < guestbookRegistry.length; i++) {
           const entry = guestbookRegistry[i];
           const isRightCol = i % 2 !== 0;
           const currentX = isRightCol ? marginX + columnWidth + 8 : marginX;
 
+          // Background Card Frame
           pdf.setFillColor(248, 250, 252);
           pdf.setDrawColor(226, 232, 240);
           pdf.roundedRect(currentX, currentY, columnWidth, cardHeight, 3, 3, 'FD');
 
+          // Guest Name
           pdf.setFont('helvetica', 'bold');
           pdf.setFontSize(11);
           pdf.setTextColor(15, 23, 42);
-          pdf.text(pdf.splitTextToSize(entry.name, columnWidth - 8)[0], currentX + 5, currentY + 8);
+          pdf.text(pdf.splitTextToSize(entry.name, columnWidth - 8)[0], currentX + 5, currentY + 7);
 
+          // Subtext Details
           pdf.setFont('helvetica', 'normal');
           pdf.setFontSize(8);
           pdf.setTextColor(100, 116, 139);
           const metaLine = `${entry.organization ? entry.organization + ' • ' : ''}${entry.dateString || ''} ${entry.timestamp || ''}`;
-          pdf.text(pdf.splitTextToSize(metaLine, columnWidth - 8)[0], currentX + 5, currentY + 13);
+          pdf.text(pdf.splitTextToSize(metaLine, columnWidth - 8)[0], currentX + 5, currentY + 12);
 
-          if (entry.signatureUrl) {
+          // Dedicated Signature Box
+          pdf.setFillColor(255, 255, 255);
+          pdf.setDrawColor(203, 213, 225);
+          pdf.roundedRect(currentX + 5, currentY + 15, columnWidth - 10, 24, 2, 2, 'FD');
+
+          // Retrieve high-contrast signature bitmap
+          let signatureImg = entry.pdfSignatureImg;
+
+          if (!signatureImg && entry.strokes && entry.strokes.length > 0) {
+            signatureImg = generatePdfSignatureBitmap(entry.strokes);
+          }
+
+          if (!signatureImg && entry.signatureUrl) {
             try {
-              const signatureImg = await loadSignatureImageBitmap(entry.signatureUrl);
-              pdf.addImage(signatureImg, 'PNG', currentX + 5, currentY + 15, columnWidth - 10, 18);
+              signatureImg = await loadSignatureImageBitmap(entry.signatureUrl);
             } catch (err) {}
+          }
+
+          if (!signatureImg) {
+            signatureImg = generateCursiveFallbackSignature(entry.name, true);
+          }
+
+          if (signatureImg) {
+            try {
+              pdf.addImage(signatureImg, 'PNG', currentX + 6, currentY + 16, columnWidth - 12, 22);
+            } catch (err) {
+              console.error('Failed to embed signature into PDF:', err);
+            }
           }
 
           if (isRightCol) {
@@ -1959,24 +1859,32 @@
         img.crossOrigin = 'anonymous';
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          canvas.width = 300;
-          canvas.height = 120;
+          canvas.width = 480;
+          canvas.height = 180;
           const ctx = canvas.getContext('2d');
           ctx.fillStyle = '#ffffff';
-          ctx.fillRect(0, 0, 300, 120);
+          ctx.fillRect(0, 0, 480, 180);
 
-          ctx.drawImage(img, 10, 10, 280, 100);
+          ctx.drawImage(img, 15, 15, 450, 150);
 
-          const imgData = ctx.getImageData(0, 0, 300, 120);
+          const imgData = ctx.getImageData(0, 0, 480, 180);
           for (let i = 0; i < imgData.data.length; i += 4) {
-            if (imgData.data[i] > 180 && imgData.data[i+1] > 180 && imgData.data[i+2] > 180) {
+            // Invert or enhance contrast: if pixel is dark or transparent, make it sharp deep blue/black
+            const alpha = imgData.data[i + 3];
+            const r = imgData.data[i];
+            const g = imgData.data[i + 1];
+            const b = imgData.data[i + 2];
+
+            if (alpha > 30 && (r > 150 || g > 150 || b > 150)) {
+              imgData.data[i] = 15;
+              imgData.data[i + 1] = 23;
+              imgData.data[i + 2] = 42;
+              imgData.data[i + 3] = 255;
+            } else if (alpha < 30) {
               imgData.data[i] = 255;
-              imgData.data[i+1] = 255;
-              imgData.data[i+2] = 255;
-            } else {
-              imgData.data[i] = 14;
-              imgData.data[i+1] = 40;
-              imgData.data[i+2] = 90;
+              imgData.data[i + 1] = 255;
+              imgData.data[i + 2] = 255;
+              imgData.data[i + 3] = 255;
             }
           }
           ctx.putImageData(imgData, 0, 0);
@@ -1986,87 +1894,6 @@
         img.src = dataUrl;
       });
     }
-
-    /* ========================================================================= */
-    /* ADMIN MODAL & SECURITY PIN                                                */
-    /* ========================================================================= */
-    window.openAdminModalWithAuth = function() {
-      const modal = document.getElementById('adminModal');
-      const pinStage = document.getElementById('adminPinStage');
-      const dashStage = document.getElementById('adminDashboardStage');
-      const pinInput = document.getElementById('adminPinInput');
-      const err = document.getElementById('adminPinError');
-
-      if (isAdminUnlocked) {
-        pinStage.classList.add('hidden');
-        dashStage.classList.remove('hidden');
-        updateAdminModalStats();
-      } else {
-        pinStage.classList.remove('hidden');
-        dashStage.classList.add('hidden');
-        if (pinInput) pinInput.value = '';
-        if (err) err.classList.add('hidden');
-      }
-      modal.classList.remove('hidden');
-    };
-
-    window.closeAdminModal = function() {
-      document.getElementById('adminModal')?.classList.add('hidden');
-    };
-
-    window.handleVerifyAdminPin = function(e) {
-      e.preventDefault();
-      const entered = document.getElementById('adminPinInput')?.value.trim();
-      const err = document.getElementById('adminPinError');
-
-      if (entered === currentAdminPin) {
-        isAdminUnlocked = true;
-        document.getElementById('adminPinStage')?.classList.add('hidden');
-        document.getElementById('adminDashboardStage')?.classList.remove('hidden');
-        updateAdminModalStats();
-      } else {
-        if (err) err.classList.remove('hidden');
-      }
-    };
-
-    function updateAdminModalStats() {
-      const roomLabel = document.getElementById('adminRoomLabel');
-      const countLabel = document.getElementById('adminTotalSignaturesCount');
-      if (roomLabel) roomLabel.textContent = currentRoomCode;
-      if (countLabel) countLabel.textContent = guestbookRegistry.length;
-    }
-
-    window.triggerMassPopCelebration = function() {
-      closeAdminModal();
-      const ids = Array.from(balloonEntitiesMap.keys());
-      ids.forEach((id, index) => {
-        setTimeout(() => triggerLocalBalloonPop(id), index * 80);
-      });
-      activeBalloonsMap.clear();
-      guestbookRegistry.forEach(g => g.popped = true);
-      saveLocalRoomStorage();
-      updateCountersHUD();
-
-      broadcastRealtimePayload({
-        type: 'POP_ALL',
-        sender: clientId
-      });
-    };
-
-    window.clearStoredEventLedger = function() {
-      if (confirm('Warning: This will permanently clear all recorded visitor signatures and balloons for this room. Make sure you exported the PDF first. Continue?')) {
-        guestbookRegistry.length = 0;
-        activeBalloonsMap.clear();
-        balloonEntitiesMap.forEach(e => {
-          if (e.domElement && e.domElement.parentNode) e.domElement.parentNode.removeChild(e.domElement);
-        });
-        balloonEntitiesMap.clear();
-        saveLocalRoomStorage();
-        updateCountersHUD();
-        updateAdminModalStats();
-        alert('Ledger cleared successfully.');
-      }
-    };
 
     window.spawnTestAttendee = function() {
       const sampleNames = ['Aria Stark', 'Kenji Sato', 'Amira Hassan', 'Lucas Moreau', 'Elena Rostova'];
@@ -2080,7 +1907,8 @@
         roomCode: currentRoomCode.toUpperCase(),
         name: randName,
         organization: randOrg,
-        signatureUrl: generateCursiveFallbackSignature(randName),
+        signatureUrl: generateCursiveFallbackSignature(randName, false),
+        pdfSignatureImg: generateCursiveFallbackSignature(randName, true),
         theme: randTheme,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         dateString: new Date().toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }),
