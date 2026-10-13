@@ -82,7 +82,7 @@
 
     /* Glassmorphism UI Panels */
     .glass-card {
-      background: rgba(255, 255, 255, 0.86);
+      background: rgba(255, 255, 255, 0.88);
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
       border: 1px solid rgba(255, 255, 255, 0.7);
@@ -90,7 +90,7 @@
     }
 
     .glass-input {
-      background: rgba(255, 255, 255, 0.8);
+      background: rgba(255, 255, 255, 0.85);
       border: 1px solid rgba(203, 213, 225, 0.8);
       color: #0f172a;
     }
@@ -101,9 +101,7 @@
       box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.35);
     }
 
-    /* -------------------------------------------
-       3D PEARLESCENT LATEX BALLOON STYLING
-       ------------------------------------------- */
+    /* 3D Latex Balloon Structure */
     .balloon-wrapper {
       position: absolute;
       transform: translate(-50%, -50%);
@@ -117,18 +115,17 @@
       cursor: grabbing;
     }
 
-    /* True Teardrop Shape with 3D Spherical Volume */
     .balloon-bulb {
       position: relative;
-      width: 154px;
-      height: 196px;
+      width: 148px;
+      height: 190px;
       border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
       transform-origin: 50% 100%;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
-      padding: 24px 14px 16px 14px;
+      padding: 22px 12px 16px 12px;
       box-shadow: 0 26px 42px -10px rgba(15, 23, 42, 0.32),
                   0 12px 20px -8px rgba(0, 0, 0, 0.18);
       transition: filter 0.2s ease;
@@ -138,26 +135,25 @@
       filter: brightness(1.05);
     }
 
-    /* Pearlescent Primary Specular Glint (Top-Left) */
+    /* Spherical Specular Glints */
     .balloon-bulb::before {
       content: '';
       position: absolute;
       top: 14px;
-      left: 20px;
-      width: 44px;
-      height: 28px;
+      left: 18px;
+      width: 42px;
+      height: 26px;
       border-radius: 50%;
       background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.45) 45%, rgba(255, 255, 255, 0) 75%);
       transform: rotate(-32deg);
       pointer-events: none;
     }
 
-    /* Subtle Secondary Glint */
     .balloon-bulb::after {
       content: '';
       position: absolute;
-      top: 40px;
-      left: 17px;
+      top: 38px;
+      left: 15px;
       width: 14px;
       height: 11px;
       border-radius: 50%;
@@ -165,7 +161,7 @@
       pointer-events: none;
     }
 
-    /* Realistic Tied Latex Knot */
+    /* Tied Knot Details */
     .balloon-knot-container {
       position: relative;
       width: 100%;
@@ -190,10 +186,10 @@
       opacity: 0.95;
     }
 
-    /* Curving Signature Perspective Overlay */
+    /* Projected Signature Graphic */
     .balloon-signature-box {
       width: 100%;
-      height: 58px;
+      height: 56px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -224,10 +220,10 @@
 </head>
 <body class="sky-bg text-slate-900 w-screen h-screen overflow-hidden">
 
-  <!-- ================= PROCEDURAL 60 FPS CLOUD LAYER ================= -->
+  <!-- ================= PROCEDURAL CLOUD LAYER ================= -->
   <canvas id="cloudCanvas" class="fixed inset-0 pointer-events-none z-[1] w-full h-full"></canvas>
 
-  <!-- Sun Lighting Highlights -->
+  <!-- Sun Flares -->
   <div class="sun-core"></div>
   <div class="sun-beams"></div>
 
@@ -268,7 +264,7 @@
     <div class="glass-card w-full max-w-xl rounded-3xl p-6 sm:p-8 space-y-5 my-auto">
       <div class="text-center space-y-1">
         <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Leave Your Mark in the Sky</h2>
-        <p class="text-xs sm:text-sm text-slate-600 font-medium">Draw your autograph to release a pearlescent 3D helium balloon on the exhibition wall.</p>
+        <p class="text-xs sm:text-sm text-slate-600 font-medium">Draw your autograph below to release a 3D helium balloon on the big exhibition display.</p>
       </div>
 
       <form id="kioskForm" onsubmit="submitGuestbook(event)" class="space-y-4">
@@ -285,11 +281,11 @@
           </div>
         </div>
 
-        <!-- 7-Color Balloon Theme Selector -->
+        <!-- 7-Color Theme Selector -->
         <div>
           <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1.5">Balloon Theme</label>
           <div class="grid grid-cols-7 gap-2" id="colorPickerContainer">
-            <!-- Injected via JavaScript -->
+            <!-- Injected via JS -->
           </div>
         </div>
 
@@ -301,7 +297,7 @@
               <span id="sigValidBadge" class="hidden text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">Accepted</span>
             </div>
 
-            <!-- Weight Switcher & Clear -->
+            <!-- Stroke Weight Switcher & Clear -->
             <div class="flex items-center space-x-2">
               <div class="flex items-center bg-slate-200/80 p-0.5 rounded-lg text-xs">
                 <button type="button" onclick="setStrokeWeight(2)" id="strokeBtn-2" class="px-2 py-0.5 rounded font-bold text-slate-600 hover:text-slate-900">Fine</button>
@@ -317,31 +313,34 @@
           <div class="relative w-full h-40 rounded-2xl overflow-hidden border border-slate-300/80 bg-slate-900 shadow-inner">
             <canvas id="padCanvas" class="w-full h-full block cursor-crosshair touch-none"></canvas>
             <div id="padPlaceholder" class="absolute inset-0 flex items-center justify-center pointer-events-none text-slate-500 font-signature text-2xl select-none">
-              Sign with finger, mouse, or stylus
+              Sign with finger, stylus, or mouse
             </div>
           </div>
         </div>
 
-        <!-- Release Button -->
+        <!-- Submit Launch Button -->
         <button type="submit" id="btnSubmitForm" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-extrabold text-base tracking-wide shadow-xl shadow-sky-600/30 active:scale-[0.99] transition flex items-center justify-center space-x-2">
           <i data-lucide="send" class="w-5 h-5"></i>
-          <span>Release Balloon into Open Sky</span>
+          <span>Launch Balloon to Big Display</span>
         </button>
       </form>
 
-      <!-- 3-Second Auto Reset Modal Banner -->
-      <div id="kioskSuccessNotice" class="hidden rounded-2xl bg-emerald-600 text-white p-4 shadow-xl text-center space-y-1 animate-fade-in">
+      <!-- Auto Reset Modal Banner -->
+      <div id="kioskSuccessNotice" class="hidden rounded-2xl bg-emerald-600 text-white p-4 shadow-xl text-center space-y-2 animate-fade-in">
         <p class="font-extrabold text-base flex items-center justify-center gap-1.5">
-          <i data-lucide="check-circle" class="w-5 h-5"></i> Balloon Released!
+          <i data-lucide="check-circle" class="w-5 h-5"></i> Balloon Airborne on Big Screen!
         </p>
-        <p class="text-xs text-emerald-100 font-medium">Terminal resets in <span id="resetSeconds" class="font-bold underline">3</span>s for next attendee...</p>
+        <p class="text-xs text-emerald-100 font-medium">Terminal resets in <span id="resetSeconds" class="font-bold underline">3</span>s for the next visitor.</p>
+        <button type="button" onclick="switchMode('wall')" class="mt-1 px-3 py-1 bg-white/20 hover:bg-white/30 text-white rounded-lg text-xs font-bold transition">
+          Switch to Big Display Now &rarr;
+        </button>
       </div>
     </div>
   </main>
 
   <!-- ================= SCREEN B: BIG DISPLAY / PROJECTOR WALL ================= -->
   <section id="screenWall" class="hidden relative w-full h-full overflow-hidden pt-16">
-    <!-- 7-Segment Verlet Dynamic Strings Canvas -->
+    <!-- Dynamic Strings Canvas -->
     <canvas id="stringCanvas" class="absolute inset-0 z-[15] pointer-events-none w-full h-full"></canvas>
 
     <!-- Balloon Floating Container -->
@@ -367,7 +366,7 @@
       </div>
     </div>
 
-    <!-- HUD Overlay Top-Right: Mobile Walk-Up QR & Admin -->
+    <!-- HUD Overlay Top-Right: Mobile QR & Admin -->
     <div class="absolute top-20 right-6 z-30 flex items-center space-x-2.5">
       <button onclick="toggleAudio()" id="btnAudioMute" class="p-3 rounded-2xl glass-card hover:bg-white text-slate-700 transition shadow">
         <i data-lucide="volume-2" id="iconAudio" class="w-5 h-5"></i>
@@ -398,7 +397,7 @@
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
-      <p class="text-xs text-slate-600">Point your phone camera to launch your own balloon in real time.</p>
+      <p class="text-xs text-slate-600">Scan with your smartphone to launch a balloon instantly onto the big display.</p>
       <div class="bg-white p-4 rounded-2xl inline-block shadow-inner mx-auto">
         <div id="qrcodeBox"></div>
       </div>
@@ -408,7 +407,7 @@
     </div>
   </div>
 
-  <!-- ================= PIN-PROTECTED ADMIN MODAL ================= -->
+  <!-- ================= ADMIN PIN & EXPORT MODAL ================= -->
   <div id="modalAdmin" class="hidden fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-md rounded-3xl p-6 sm:p-8 space-y-5">
 
@@ -471,10 +470,10 @@
     </div>
   </div>
 
-  <!-- ================= SCRIPT LOGIC ================= -->
+  <!-- ================= CORE APPLICATION LOGIC ================= -->
   <script>
     /* ----------------------------------------------------
-       1. 7-COLOR PEARLESCENT THEMES (Rich 3D Shader Gradients)
+       1. 7-COLOR PEARLESCENT THEMES
        ---------------------------------------------------- */
     const BALLOON_THEMES = [
       {
@@ -577,7 +576,7 @@
     }
 
     /* ----------------------------------------------------
-       2. 60 FPS OPEN SKY PROCEDURAL DRIFTING CLOUDS
+       2. PROCEDURAL 60 FPS CLOUDS
        ---------------------------------------------------- */
     const cloudCanvas = document.getElementById('cloudCanvas');
     const cloudCtx = cloudCanvas.getContext('2d');
@@ -635,7 +634,7 @@
     }
 
     /* ----------------------------------------------------
-       3. SIGNATURE PAD ENGINE (High-DPI Dual Stream)
+       3. SIGNATURE PAD ENGINE
        ---------------------------------------------------- */
     const pad = document.getElementById('padCanvas');
     const padCtx = pad.getContext('2d');
@@ -747,7 +746,7 @@
         c1.stroke();
       });
 
-      // Stream 2: Deep Dark Ink (#0f172a) on Pure White (for PDF Export)
+      // Stream 2: Deep Dark Ink on Pure White (for PDF Export)
       const s2 = document.createElement('canvas');
       s2.width = w * 2;
       s2.height = h * 2;
@@ -774,7 +773,7 @@
     }
 
     /* ----------------------------------------------------
-       4. THEME SELECTOR UI
+       4. THEME SELECTOR BUTTONS
        ---------------------------------------------------- */
     const colorPickerContainer = document.getElementById('colorPickerContainer');
     BALLOON_THEMES.forEach((thm, idx) => {
@@ -839,7 +838,7 @@
     }
 
     /* ----------------------------------------------------
-       6. HELIUM BALLOON & 7-SEGMENT VERLET STRING PHYSICS
+       6. HELIUM BALLOON & SMOOTH SKY EQUILIBRIUM PHYSICS
        ---------------------------------------------------- */
     const stage = document.getElementById('balloonStage');
     const stringCanvas = document.getElementById('stringCanvas');
@@ -862,9 +861,14 @@
         const stageH = window.innerHeight;
 
         this.x = Math.random() * (stageW - 320) + 160;
-        this.y = stageH + 240; // float in from bottom
-        this.vx = (Math.random() - 0.5) * 1.8;
-        this.vy = -3.2 - Math.random() * 1.4;
+        this.y = stageH + 240; // Ascend gracefully from below view
+        this.vx = (Math.random() - 0.5) * 1.5;
+        this.vy = -3.8;
+
+        // Individual natural hovering equilibrium zone in upper sky
+        this.targetHoverY = 130 + Math.random() * (stageH * 0.28);
+        this.hoverPhase = Math.random() * Math.PI * 2;
+        this.hoverSpeed = 0.02 + Math.random() * 0.015;
 
         this.squashX = 1.0;
         this.squashY = 1.0;
@@ -874,7 +878,7 @@
         this.dragStartY = 0;
         this.pointerDownPos = { x: 0, y: 0 };
 
-        // 7-Node Verlet Integration Dynamic String
+        // 7-Node Dynamic Verlet String
         this.segmentLength = 13;
         this.nodes = [];
         for (let i = 0; i < 7; i++) {
@@ -957,41 +961,48 @@
 
       updatePhysics(wind) {
         if (!this.isDragging) {
-          // Buoyancy vs Quadratic Air Drag
-          const buoyancy = -0.16;
-          const dragCoeff = 0.0075;
-          const dragY = dragCoeff * (this.vy * Math.abs(this.vy));
-          this.vy += buoyancy - dragY;
+          // Check if balloon has reached upper atmospheric equilibrium zone
+          if (this.y > this.targetHoverY + 40) {
+            // Rising Phase: Archimedes lift vs air drag
+            const buoyancy = -0.16;
+            const dragCoeff = 0.0075;
+            const dragY = dragCoeff * (this.vy * Math.abs(this.vy));
+            this.vy += buoyancy - dragY;
+            if (this.vy < -4.0) this.vy = -4.0;
+          } else {
+            // Equilibrium Zone: Smooth harmonic hover (No bouncing!)
+            this.hoverPhase += this.hoverSpeed;
+            const equilibriumTarget = this.targetHoverY + Math.sin(this.hoverPhase) * 12;
+            const dy = equilibriumTarget - this.y;
+            this.vy += dy * 0.02;
+            this.vy *= 0.88; // Smooth critical damping
+          }
 
-          // Terminal ascent velocity limit
-          if (this.vy < -4.2) this.vy = -4.2;
-
-          this.vx += (wind - this.vx) * 0.035;
+          // Horizontal drift tied to wind breeze
+          this.vx += (wind - this.vx) * 0.032;
           this.x += this.vx;
           this.y += this.vy;
 
-          // Soft-Spring Ceiling Cushion at y = 90px with squash-stretch
-          const ceilingY = 90;
-          if (this.y < ceilingY) {
-            this.y = ceilingY;
-            this.vy = -this.vy * 0.38 + 0.3;
-            this.squashX = 1.12;
-            this.squashY = 0.88;
+          // Soft safety buffer at zenith (prevents clipping the header navigation)
+          const zenithLimit = 105;
+          if (this.y < zenithLimit) {
+            this.y = zenithLimit;
+            if (this.vy < 0) this.vy = 0;
           }
 
-          // Wall bounces
-          if (this.x < 95) { this.x = 95; this.vx *= -0.7; }
-          if (this.x > window.innerWidth - 95) { this.x = window.innerWidth - 95; this.vx *= -0.7; }
+          // Screen horizontal borders with smooth turnaround
+          if (this.x < 100) { this.x = 100; this.vx = Math.abs(this.vx) * 0.7; }
+          if (this.x > window.innerWidth - 100) { this.x = window.innerWidth - 100; this.vx = -Math.abs(this.vx) * 0.7; }
         }
 
-        // Smoothly restore elasticity
+        // Restore elasticity
         this.squashX += (1.0 - this.squashX) * 0.1;
         this.squashY += (1.0 - this.squashY) * 0.1;
 
-        // Dynamic roll angle from aerodynamic tilt
+        // Aerodynamic tilt
         this.tilt = (this.vx - wind) * 3.8;
 
-        // Apply visual transform
+        // Render DOM transform
         this.el.style.left = `${this.x}px`;
         this.el.style.top = `${this.y}px`;
         const bulb = this.el.querySelector('.balloon-bulb');
@@ -999,7 +1010,7 @@
           bulb.style.transform = `rotate(${this.tilt}deg) scale(${this.squashX}, ${this.squashY})`;
         }
 
-        // Attach Verlet String to knot anchor
+        // Verlet String anchored to knot
         const knotAnchorX = this.x;
         const knotAnchorY = this.y + 104;
 
@@ -1016,7 +1027,7 @@
           n.y += vy;
         }
 
-        // Solve 3 distance constraint iterations
+        // 3 iterative distance constraint passes
         for (let pass = 0; pass < 3; pass++) {
           for (let i = 0; i < this.nodes.length - 1; i++) {
             const n1 = this.nodes[i];
@@ -1041,7 +1052,7 @@
       drawRope(ctx) {
         if (this.nodes.length < 2) return;
         ctx.save();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.72)';
         ctx.lineWidth = 1.7;
         ctx.beginPath();
         ctx.moveTo(this.nodes[0].x, this.nodes[0].y);
@@ -1056,7 +1067,7 @@
       }
     }
 
-    // Main 60 FPS Physics Loop
+    // 60 FPS Physics Loop
     let windStep = 0;
     function physicsLoop() {
       windStep += 0.015;
@@ -1086,7 +1097,6 @@
 
       playAudioPop();
 
-      // Confetti burst
       const rx = b.x / window.innerWidth;
       const ry = b.y / window.innerHeight;
       confetti({
@@ -1168,7 +1178,7 @@
     }
 
     /* ----------------------------------------------------
-       8. KIOSK SUBMISSION & 3-SECOND AUTO-RESET
+       8. KIOSK SUBMISSION & SMOOTH VIEW LAUNCH
        ---------------------------------------------------- */
     function submitGuestbook(e) {
       e.preventDefault();
@@ -1177,7 +1187,7 @@
       const streams = generateSignatureStreams();
 
       if (!streams) {
-        alert('Please draw your signature before launching!');
+        alert('Please draw your autograph before launching the balloon!');
         return;
       }
 
@@ -1193,11 +1203,19 @@
         date: now.toLocaleDateString()
       };
 
+      // 1. Save and add balloon
       recordInLedger(entryData);
       addBalloon(entryData);
       broadcastMessage({ action: 'NEW_BALLOON', data: entryData });
 
-      // 3-Second Reset Loop
+      // 2. Play subtle launch chime / confetti
+      confetti({
+        particleCount: 30,
+        spread: 50,
+        origin: { y: 0.85 }
+      });
+
+      // 3. Auto-transition or feedback UI
       const notice = document.getElementById('kioskSuccessNotice');
       const counterSpan = document.getElementById('resetSeconds');
       const submitBtn = document.getElementById('btnSubmitForm');
@@ -1311,7 +1329,7 @@
     }
 
     /* ----------------------------------------------------
-       10. SCREEN SWITCHING & ADMIN CONTROLS
+       10. SCREEN SWITCHING & QR CODE MODAL
        ---------------------------------------------------- */
     function switchMode(m) {
       currentMode = m;
@@ -1378,7 +1396,7 @@
       }
     }
 
-    // Live Exhibition Clock
+    // Exhibition Wall Clock
     setInterval(() => {
       const clock = document.getElementById('wallLiveClock');
       if (clock) clock.innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
