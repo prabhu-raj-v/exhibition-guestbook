@@ -83,11 +83,19 @@ let currentSkyPhase = '';
 let autoLaunchTimer = null;
 const AUTO_LAUNCH_DELAY_MS = 500;
 
-// Normalize room code to prevent case mismatch between phones and Macs
-const urlParams = new URLSearchParams(window.location.search);
-if (urlParams.get('room')) {
-  roomCode = urlParams.get('room').toUpperCase().trim().replace(/[^A-Z0-9_-]/g, '');
+// Deterministic cross-platform room extraction
+function getSanitizedRoom() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const roomParam = params.get('room');
+    if (roomParam && roomParam.trim().length > 0) {
+      return roomParam.toUpperCase().trim().replace(/[^A-Z0-9_-]/g, '');
+    }
+  } catch (e) {}
+  return 'EXPO-2026';
 }
+
+roomCode = getSanitizedRoom();
 
 const STORAGE_KEY = `guestbook_vault_${roomCode}`;
 
@@ -102,8 +110,7 @@ function getLedger() {
 function recordInLedger(entry) {
   const records = getLedger();
   if (!records.some(r => r.id === entry.id)) {
-    // Keep ledger capped at 50 to avoid Safari quota limits
-    if (records.length > 50) records.shift();
+    if (records.length >= 40) records.shift();
     records.push(entry);
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
@@ -296,8 +303,8 @@ function resizePad() {
   const rect = pad.getBoundingClientRect();
   if (rect.width === 0 || rect.height === 0) return;
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  pad.width = rect.width * dpr;
-  pad.height = rect.height * dpr;
+  pad.width = Math.floor(rect.width * dpr);
+  pad.height = Math.floor(rect.height * dpr);
   padCtx.resetTransform();
   padCtx.scale(dpr, dpr);
   redrawPad();
@@ -455,18 +462,18 @@ function generateSignatureStreams() {
 
   if (!hasValidPoints || maxX <= minX || maxY <= minY) return null;
 
-  const paddingX = Math.max(16, (maxX - minX) * 0.12);
-  const paddingY = Math.max(12, (maxY - minY) * 0.12);
+  const paddingX = Math.max(14, (maxX - minX) * 0.12);
+  const paddingY = Math.max(10, (maxY - minY) * 0.12);
   const boxX = Math.max(0, minX - paddingX);
   const boxY = Math.max(0, minY - paddingY);
   const boxW = (maxX - minX) + paddingX * 2;
   const boxH = (maxY - minY) + paddingY * 2;
 
-  // Ultra-compressed footprint to prevent Safari payload limits
-  const targetW = 320;
-  const targetH = Math.max(120, Math.round((boxH / boxW) * targetW));
+  // Keep payload light (~5KB) for reliable Safari websocket transmissions
+  const targetW = 280;
+  const targetH = Math.max(100, Math.round((boxH / boxW) * targetW));
 
-  // Stream 1: White Ink for Balloon (JPEG/WebP to keep bytes tiny)
+  // Stream 1: White Ink on Transparent PNG
   const s1 = document.createElement('canvas');
   s1.width = targetW;
   s1.height = targetH;
@@ -494,7 +501,7 @@ function generateSignatureStreams() {
     c1.stroke();
   });
 
-  // Stream 2: Dark Ink on White for PDF
+  // Stream 2: Dark Ink on Pure White for PDF
   const s2 = document.createElement('canvas');
   s2.width = targetW;
   s2.height = targetH;
@@ -529,7 +536,7 @@ function generateSignatureStreams() {
 }
 
 /* ----------------------------------------------------
-   5. COLOR PICKER
+   5. COLOR PICKER BUTTONS
    ---------------------------------------------------- */
 const colorPickerContainer = document.getElementById('colorPickerContainer');
 BALLOON_THEMES.forEach((thm, idx) => {
@@ -581,7 +588,6 @@ class BalloonInstance {
 
     this.x = Math.random() * (stageW - 320) + 160;
 
-    // Instant entrance: Starts right at viewport edge and shoots up immediately
     if (isInitialBatch) {
       this.y = 110 + Math.random() * (stageH * 0.35);
       this.vy = 0;
@@ -938,35 +944,45 @@ function toggleFullScreen() {
 }
 
 /* ----------------------------------------------------
-   9. CROSS-PLATFORM WEBSOCKET & WEBRTC SYNC (ANDROID <-> MAC)
+   9. CROSS-DEVICE WEBSOCKET NETWORK (MACOS & ANDROID)
    ---------------------------------------------------- */
+function setHeaderSyncStatus(isConnected, message) {
+  const dot = document.getElementById('syncStatusDot');
+  const label = document.getElementById('syncStatusText');
+  if (dot) {
+    dot.className = isConnected 
+      ? 'w-2 h-2 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50' 
+      : 'w-2 h-2 rounded-full bg-amber-500 animate-pulse';
+  }
+  if (label) label.innerText = message || (isConnected ? 'Sync Active' : 'Connecting...');
+}
+
 function initSyncNetwork() {
-  // 1. Same-device tab synchronizer
+  // Local tab sync
   try {
     broadcastChannel = new BroadcastChannel(`sky_bridge_${roomCode}`);
     broadcastChannel.onmessage = (ev) => handleSyncPayload(ev.data);
   } catch (e) {}
 
-  // 2. Multi-Device Broker with Safari/WebKit compatibility parameters
-  const clientId = 'sky_' + Math.random().toString(16).slice(2, 10);
-  const topic = `guestbook/sky/${roomCode}/data`;
+  const clientId = 'guest_' + Math.random().toString(16).slice(2, 10);
+  const topic = `guestbook/sky/${roomCode}/feed`;
 
-  // Use HiveMQ Public WSS on Standard HTTPS Port 8000/443 (Unblocked by Apple iCloud Relay & Mac Safari)
-  const brokerUrl = 'wss://broker.hivemq.com:8884/mqtt';
+  setHeaderSyncStatus(false, 'Connecting...');
 
+  // Standard secure endpoint: EMQX over Port 8084 with explicit path & clean protocol configuration
   try {
-    mqttClient = mqtt.connect(brokerUrl, {
+    mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
       clientId: clientId,
       clean: true,
-      connectTimeout: 5000,
-      reconnectPeriod: 2500,
-      // Crucial subprotocol parameters for WebKit / Safari
+      connectTimeout: 7000,
+      reconnectPeriod: 3000,
+      keepalive: 30,
       protocol: 'wss',
-      protocolVersion: 4,
       path: '/mqtt'
     });
 
     mqttClient.on('connect', () => {
+      setHeaderSyncStatus(true, 'Live Sync Active');
       mqttClient.subscribe(topic, { qos: 0 });
     });
 
@@ -977,48 +993,32 @@ function initSyncNetwork() {
       } catch (e) {}
     });
 
-    // Fallback broker if primary connection is denied by local network
+    mqttClient.on('offline', () => {
+      setHeaderSyncStatus(false, 'Reconnecting...');
+    });
+
     mqttClient.on('error', () => {
-      if (mqttClient) mqttClient.end();
-      connectFallbackBroker(clientId, topic);
+      setHeaderSyncStatus(false, 'Sync Offline');
     });
   } catch (e) {
-    connectFallbackBroker(clientId, topic);
+    setHeaderSyncStatus(false, 'Sync Offline');
   }
-}
-
-function connectFallbackBroker(clientId, topic) {
-  try {
-    mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
-      clientId: clientId + '_fb',
-      clean: true,
-      connectTimeout: 5000,
-      protocol: 'wss',
-      path: '/mqtt'
-    });
-    mqttClient.on('connect', () => mqttClient.subscribe(topic, { qos: 0 }));
-    mqttClient.on('message', (t, msg) => {
-      try {
-        handleSyncPayload(JSON.parse(msg.toString()));
-      } catch (e) {}
-    });
-  } catch (e) {}
 }
 
 function broadcastMessage(payload) {
   if (broadcastChannel) broadcastChannel.postMessage(payload);
   if (mqttClient && mqttClient.connected) {
-    const topic = `guestbook/sky/${roomCode}/data`;
-    mqttClient.publish(topic, JSON.stringify(payload));
+    const topic = `guestbook/sky/${roomCode}/feed`;
+    mqttClient.publish(topic, JSON.stringify(payload), { qos: 0 });
   }
 }
 
 function handleSyncPayload(payload) {
-  if (!payload) return;
-  if (payload.action === 'NEW_BALLOON') {
+  if (!payload || !payload.action) return;
+  if (payload.action === 'NEW_BALLOON' && payload.data) {
     recordInLedger(payload.data);
     addBalloon(payload.data, false);
-  } else if (payload.action === 'POP') {
+  } else if (payload.action === 'POP' && payload.id) {
     popBalloonById(payload.id, false);
   }
 }
@@ -1051,7 +1051,7 @@ function executeBalloonLaunch() {
     date: now.toLocaleDateString()
   };
 
-  // Immediate launch & sync
+  // Immediate launch & multi-device broadcast
   recordInLedger(entryData);
   addBalloon(entryData, false);
   broadcastMessage({ action: 'NEW_BALLOON', data: entryData });
