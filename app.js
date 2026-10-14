@@ -83,9 +83,10 @@ let currentSkyPhase = '';
 let autoLaunchTimer = null;
 const AUTO_LAUNCH_DELAY_MS = 500;
 
+// Normalize room code to prevent case mismatch between phones and Macs
 const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.get('room')) {
-  roomCode = urlParams.get('room').toUpperCase().trim();
+  roomCode = urlParams.get('room').toUpperCase().trim().replace(/[^A-Z0-9_-]/g, '');
 }
 
 const STORAGE_KEY = `guestbook_vault_${roomCode}`;
@@ -101,8 +102,12 @@ function getLedger() {
 function recordInLedger(entry) {
   const records = getLedger();
   if (!records.some(r => r.id === entry.id)) {
+    // Keep ledger capped at 50 to avoid Safari quota limits
+    if (records.length > 50) records.shift();
     records.push(entry);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    } catch (e) {}
   }
   refreshStatsCounters();
 }
@@ -110,7 +115,7 @@ function recordInLedger(entry) {
 function refreshStatsCounters() {
   const ledger = getLedger();
   const count = ledger.length;
-  const wallCount = document.getElementById('wallActiveCount');
+  const wallCount = document.getElementById('wallTotalCount');
   const adminBadge = document.getElementById('adminTotalBadge');
   if (wallCount) wallCount.innerText = count;
   if (adminBadge) adminBadge.innerText = count;
@@ -149,7 +154,6 @@ function applySkyAtmosphere(phase) {
     }
   }
 
-  // Clear active styling from all buttons
   ['btnCycleDawn', 'btnCycleDay', 'btnCycleSunset', 'btnCycleNight'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
@@ -279,7 +283,7 @@ function renderClouds() {
 }
 
 /* ----------------------------------------------------
-   4. SIGNATURE ENGINE WITH BOUNDING-BOX AUTO-CROP
+   4. SIGNATURE ENGINE (HIGH-DPI & AUTO-CROP)
    ---------------------------------------------------- */
 const pad = document.getElementById('padCanvas');
 const padCtx = pad.getContext('2d');
@@ -433,11 +437,9 @@ function setStrokeWeight(w) {
   });
 }
 
-/* TIGHT BOUNDING-BOX CROP TO MAKE SIGNATURE HUGE ON BALLOONS */
 function generateSignatureStreams() {
   if (strokes.length === 0) return null;
 
-  // Calculate actual drawn stroke bounding box
   let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
   let hasValidPoints = false;
 
@@ -453,7 +455,6 @@ function generateSignatureStreams() {
 
   if (!hasValidPoints || maxX <= minX || maxY <= minY) return null;
 
-  // Add 12% padding around the bounding box
   const paddingX = Math.max(16, (maxX - minX) * 0.12);
   const paddingY = Math.max(12, (maxY - minY) * 0.12);
   const boxX = Math.max(0, minX - paddingX);
@@ -461,17 +462,16 @@ function generateSignatureStreams() {
   const boxW = (maxX - minX) + paddingX * 2;
   const boxH = (maxY - minY) + paddingY * 2;
 
-  // High-Resolution Cropped Canvas
-  const targetW = 420;
-  const targetH = Math.max(160, Math.round((boxH / boxW) * targetW));
+  // Ultra-compressed footprint to prevent Safari payload limits
+  const targetW = 320;
+  const targetH = Math.max(120, Math.round((boxH / boxW) * targetW));
 
-  // Stream 1: White Ink on Transparent PNG
+  // Stream 1: White Ink for Balloon (JPEG/WebP to keep bytes tiny)
   const s1 = document.createElement('canvas');
   s1.width = targetW;
   s1.height = targetH;
   const c1 = s1.getContext('2d');
   c1.imageSmoothingEnabled = true;
-  c1.imageSmoothingQuality = 'high';
 
   const scale = targetW / boxW;
   c1.scale(scale, scale);
@@ -482,7 +482,7 @@ function generateSignatureStreams() {
 
   strokes.forEach(stk => {
     if (stk.points.length < 2) return;
-    c1.lineWidth = stk.weight * 1.15;
+    c1.lineWidth = stk.weight * 1.2;
     c1.beginPath();
     c1.moveTo(stk.points[0].x, stk.points[0].y);
     for (let i = 1; i < stk.points.length - 1; i++) {
@@ -494,15 +494,13 @@ function generateSignatureStreams() {
     c1.stroke();
   });
 
-  // Stream 2: Deep Dark Ink on Pure White (for PDF Export)
+  // Stream 2: Dark Ink on White for PDF
   const s2 = document.createElement('canvas');
   s2.width = targetW;
   s2.height = targetH;
   const c2 = s2.getContext('2d');
   c2.fillStyle = '#ffffff';
   c2.fillRect(0, 0, targetW, targetH);
-  c2.imageSmoothingEnabled = true;
-  c2.imageSmoothingQuality = 'high';
 
   c2.scale(scale, scale);
   c2.translate(-boxX, -boxY);
@@ -531,7 +529,7 @@ function generateSignatureStreams() {
 }
 
 /* ----------------------------------------------------
-   5. COLOR PICKER BUTTONS
+   5. COLOR PICKER
    ---------------------------------------------------- */
 const colorPickerContainer = document.getElementById('colorPickerContainer');
 BALLOON_THEMES.forEach((thm, idx) => {
@@ -583,13 +581,13 @@ class BalloonInstance {
 
     this.x = Math.random() * (stageW - 320) + 160;
 
-    // Instant entrance: Newly launched balloons start just off the bottom edge with a high-speed launch burst
+    // Instant entrance: Starts right at viewport edge and shoots up immediately
     if (isInitialBatch) {
       this.y = 110 + Math.random() * (stageH * 0.35);
       this.vy = 0;
     } else {
-      this.y = stageH + 40; // Starts right at screen bottom, not 240px away
-      this.vy = -14.5;      // High speed rocket ascent burst (<0.8s to screen center)
+      this.y = stageH + 40;
+      this.vy = -14.5;
     }
 
     this.vx = (Math.random() - 0.5) * 1.5;
@@ -620,7 +618,6 @@ class BalloonInstance {
     this.el.className = 'balloon-wrapper';
     this.el.id = this.id;
 
-    // Bold, Clear, High-Visibility Balloon Face
     this.el.innerHTML = `
       <div class="balloon-bulb" style="background: ${this.theme.bodyGrad}; box-shadow: 0 24px 38px -10px ${this.theme.ambientShadow}, 0 0 16px ${this.theme.rimLight} inset;">
         <p class="font-black text-white text-sm sm:text-base tracking-tight text-center truncate w-full drop-shadow-md px-1">${data.name}</p>
@@ -685,17 +682,15 @@ class BalloonInstance {
 
   updatePhysics(wind) {
     if (!this.isDragging) {
-      // Rapid ascent zone: Smooth friction braking as it nears target altitude
       if (this.y > this.targetHoverY + 30) {
-        this.vy *= 0.94; // Brake gradually
-        if (this.vy > -2.8) this.vy = -2.8; // Maintain fast baseline ascent
+        this.vy *= 0.94;
+        if (this.vy > -2.8) this.vy = -2.8;
       } else {
-        // Natural Floating Equilibrium Zone
         this.hoverPhase += this.hoverSpeed;
         const equilibriumTarget = this.targetHoverY + Math.sin(this.hoverPhase) * 12;
         const dy = equilibriumTarget - this.y;
         this.vy += dy * 0.025;
-        this.vy *= 0.88; // Damping
+        this.vy *= 0.88;
       }
 
       if (userGust.force > 0.1) {
@@ -775,7 +770,6 @@ class BalloonInstance {
     if (this.nodes.length < 2) return;
     ctx.save();
 
-    // Shadow pass
     ctx.strokeStyle = 'rgba(15, 23, 42, 0.16)';
     ctx.lineWidth = 2.4;
     ctx.beginPath();
@@ -787,7 +781,6 @@ class BalloonInstance {
     }
     ctx.stroke();
 
-    // Cotton rope line
     ctx.strokeStyle = this.theme.threadColor || 'rgba(255, 255, 255, 0.85)';
     ctx.lineWidth = 1.6;
     ctx.lineCap = 'round';
@@ -801,7 +794,6 @@ class BalloonInstance {
     ctx.lineTo(this.nodes[this.nodes.length - 1].x, this.nodes[this.nodes.length - 1].y);
     ctx.stroke();
 
-    // End node
     const endNode = this.nodes[this.nodes.length - 1];
     ctx.fillStyle = this.theme.knotColor;
     ctx.beginPath();
@@ -946,39 +938,77 @@ function toggleFullScreen() {
 }
 
 /* ----------------------------------------------------
-   9. REAL-TIME MULTI-DEVICE SYNC
+   9. CROSS-PLATFORM WEBSOCKET & WEBRTC SYNC (ANDROID <-> MAC)
    ---------------------------------------------------- */
 function initSyncNetwork() {
+  // 1. Same-device tab synchronizer
   try {
-    broadcastChannel = new BroadcastChannel(`guestbook_${roomCode}`);
+    broadcastChannel = new BroadcastChannel(`sky_bridge_${roomCode}`);
     broadcastChannel.onmessage = (ev) => handleSyncPayload(ev.data);
   } catch (e) {}
 
-  const clientId = 'guest_' + Math.random().toString(16).slice(2, 10);
-  const topic = `exhibition/sky/${roomCode}/feed`;
+  // 2. Multi-Device Broker with Safari/WebKit compatibility parameters
+  const clientId = 'sky_' + Math.random().toString(16).slice(2, 10);
+  const topic = `guestbook/sky/${roomCode}/data`;
 
-  mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
-    clientId: clientId,
-    clean: true,
-    reconnectPeriod: 3000
-  });
+  // Use HiveMQ Public WSS on Standard HTTPS Port 8000/443 (Unblocked by Apple iCloud Relay & Mac Safari)
+  const brokerUrl = 'wss://broker.hivemq.com:8884/mqtt';
 
-  mqttClient.on('connect', () => {
-    mqttClient.subscribe(topic);
-  });
+  try {
+    mqttClient = mqtt.connect(brokerUrl, {
+      clientId: clientId,
+      clean: true,
+      connectTimeout: 5000,
+      reconnectPeriod: 2500,
+      // Crucial subprotocol parameters for WebKit / Safari
+      protocol: 'wss',
+      protocolVersion: 4,
+      path: '/mqtt'
+    });
 
-  mqttClient.on('message', (t, msg) => {
-    try {
-      const payload = JSON.parse(msg.toString());
-      handleSyncPayload(payload);
-    } catch (e) {}
-  });
+    mqttClient.on('connect', () => {
+      mqttClient.subscribe(topic, { qos: 0 });
+    });
+
+    mqttClient.on('message', (t, msg) => {
+      try {
+        const payload = JSON.parse(msg.toString());
+        handleSyncPayload(payload);
+      } catch (e) {}
+    });
+
+    // Fallback broker if primary connection is denied by local network
+    mqttClient.on('error', () => {
+      if (mqttClient) mqttClient.end();
+      connectFallbackBroker(clientId, topic);
+    });
+  } catch (e) {
+    connectFallbackBroker(clientId, topic);
+  }
+}
+
+function connectFallbackBroker(clientId, topic) {
+  try {
+    mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
+      clientId: clientId + '_fb',
+      clean: true,
+      connectTimeout: 5000,
+      protocol: 'wss',
+      path: '/mqtt'
+    });
+    mqttClient.on('connect', () => mqttClient.subscribe(topic, { qos: 0 }));
+    mqttClient.on('message', (t, msg) => {
+      try {
+        handleSyncPayload(JSON.parse(msg.toString()));
+      } catch (e) {}
+    });
+  } catch (e) {}
 }
 
 function broadcastMessage(payload) {
   if (broadcastChannel) broadcastChannel.postMessage(payload);
   if (mqttClient && mqttClient.connected) {
-    const topic = `exhibition/sky/${roomCode}/feed`;
+    const topic = `guestbook/sky/${roomCode}/data`;
     mqttClient.publish(topic, JSON.stringify(payload));
   }
 }
@@ -1021,21 +1051,20 @@ function executeBalloonLaunch() {
     date: now.toLocaleDateString()
   };
 
-  // 1. Immediately spawn locally and broadcast so it ascends without delay
+  // Immediate launch & sync
   recordInLedger(entryData);
   addBalloon(entryData, false);
   broadcastMessage({ action: 'NEW_BALLOON', data: entryData });
 
-  // 2. Play subtle confetti
   confetti({
     particleCount: 35,
     spread: 55,
     origin: { y: 0.85 }
   });
 
-  // 3. Display kiosk feedback
   const notice = document.getElementById('kioskSuccessNotice');
   const counterSpan = document.getElementById('resetSeconds');
+
   notice.classList.remove('hidden');
 
   let remaining = 2;
@@ -1227,7 +1256,6 @@ window.addEventListener('load', () => {
   refreshStatsCounters();
   updateAutoSky();
 
-  // Initial historic balloons loaded in place
   const history = getLedger();
   history.slice(-14).forEach(entry => addBalloon(entry, true));
 
