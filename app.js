@@ -279,11 +279,11 @@ function renderClouds() {
 }
 
 /* ----------------------------------------------------
-   4. SIGNATURE ENGINE (HIGH-DPI & ZERO SCROLL FIT)
+   4. SIGNATURE ENGINE WITH BOUNDING-BOX AUTO-CROP
    ---------------------------------------------------- */
 const pad = document.getElementById('padCanvas');
 const padCtx = pad.getContext('2d');
-let padStrokeWeight = 4;
+let padStrokeWeight = 5;
 let padDrawing = false;
 let strokes = [];
 let activeStroke = null;
@@ -423,7 +423,7 @@ function clearSignature() {
 
 function setStrokeWeight(w) {
   padStrokeWeight = w;
-  [2.5, 4, 6.5].forEach(val => {
+  [3, 5, 7.5].forEach(val => {
     const btn = document.getElementById(`strokeBtn-${val}`);
     if (val === w) {
       btn.className = 'px-1.5 sm:px-2 py-0.5 rounded font-bold bg-white text-sky-700 shadow-sm';
@@ -433,45 +433,94 @@ function setStrokeWeight(w) {
   });
 }
 
+/* TIGHT BOUNDING-BOX CROP TO MAKE SIGNATURE HUGE ON BALLOONS */
 function generateSignatureStreams() {
   if (strokes.length === 0) return null;
-  const rect = pad.getBoundingClientRect();
-  const w = Math.max(rect.width, 240);
-  const h = Math.max(rect.height, 120);
 
+  // Calculate actual drawn stroke bounding box
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  let hasValidPoints = false;
+
+  strokes.forEach(stk => {
+    stk.points.forEach(p => {
+      if (p.x < minX) minX = p.x;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.y > maxY) maxY = p.y;
+      hasValidPoints = true;
+    });
+  });
+
+  if (!hasValidPoints || maxX <= minX || maxY <= minY) return null;
+
+  // Add 12% padding around the bounding box
+  const paddingX = Math.max(16, (maxX - minX) * 0.12);
+  const paddingY = Math.max(12, (maxY - minY) * 0.12);
+  const boxX = Math.max(0, minX - paddingX);
+  const boxY = Math.max(0, minY - paddingY);
+  const boxW = (maxX - minX) + paddingX * 2;
+  const boxH = (maxY - minY) + paddingY * 2;
+
+  // High-Resolution Cropped Canvas
+  const targetW = 420;
+  const targetH = Math.max(160, Math.round((boxH / boxW) * targetW));
+
+  // Stream 1: White Ink on Transparent PNG
   const s1 = document.createElement('canvas');
-  s1.width = w * 2;
-  s1.height = h * 2;
+  s1.width = targetW;
+  s1.height = targetH;
   const c1 = s1.getContext('2d');
-  c1.scale(2, 2);
+  c1.imageSmoothingEnabled = true;
+  c1.imageSmoothingQuality = 'high';
+
+  const scale = targetW / boxW;
+  c1.scale(scale, scale);
+  c1.translate(-boxX, -boxY);
   c1.strokeStyle = '#ffffff';
   c1.lineCap = 'round';
   c1.lineJoin = 'round';
+
   strokes.forEach(stk => {
     if (stk.points.length < 2) return;
-    c1.lineWidth = stk.weight;
+    c1.lineWidth = stk.weight * 1.15;
     c1.beginPath();
     c1.moveTo(stk.points[0].x, stk.points[0].y);
-    for (let i = 1; i < stk.points.length; i++) c1.lineTo(stk.points[i].x, stk.points[i].y);
+    for (let i = 1; i < stk.points.length - 1; i++) {
+      const xc = (stk.points[i].x + stk.points[i + 1].x) / 2;
+      const yc = (stk.points[i].y + stk.points[i + 1].y) / 2;
+      c1.quadraticCurveTo(stk.points[i].x, stk.points[i].y, xc, yc);
+    }
+    c1.lineTo(stk.points[stk.points.length - 1].x, stk.points[stk.points.length - 1].y);
     c1.stroke();
   });
 
+  // Stream 2: Deep Dark Ink on Pure White (for PDF Export)
   const s2 = document.createElement('canvas');
-  s2.width = w * 2;
-  s2.height = h * 2;
+  s2.width = targetW;
+  s2.height = targetH;
   const c2 = s2.getContext('2d');
   c2.fillStyle = '#ffffff';
-  c2.fillRect(0, 0, s2.width, s2.height);
-  c2.scale(2, 2);
+  c2.fillRect(0, 0, targetW, targetH);
+  c2.imageSmoothingEnabled = true;
+  c2.imageSmoothingQuality = 'high';
+
+  c2.scale(scale, scale);
+  c2.translate(-boxX, -boxY);
   c2.strokeStyle = '#0f172a';
   c2.lineCap = 'round';
   c2.lineJoin = 'round';
+
   strokes.forEach(stk => {
     if (stk.points.length < 2) return;
-    c2.lineWidth = stk.weight * 1.25;
+    c2.lineWidth = stk.weight * 1.35;
     c2.beginPath();
     c2.moveTo(stk.points[0].x, stk.points[0].y);
-    for (let i = 1; i < stk.points.length; i++) c2.lineTo(stk.points[i].x, stk.points[i].y);
+    for (let i = 1; i < stk.points.length - 1; i++) {
+      const xc = (stk.points[i].x + stk.points[i + 1].x) / 2;
+      const yc = (stk.points[i].y + stk.points[i + 1].y) / 2;
+      c2.quadraticCurveTo(stk.points[i].x, stk.points[i].y, xc, yc);
+    }
+    c2.lineTo(stk.points[stk.points.length - 1].x, stk.points[stk.points.length - 1].y);
     c2.stroke();
   });
 
@@ -502,7 +551,7 @@ BALLOON_THEMES.forEach((thm, idx) => {
 });
 
 /* ----------------------------------------------------
-   6. BALLOON & STRING SIMULATION
+   6. HIGH-SPEED INSTANT LAUNCH BALLOON PHYSICS
    ---------------------------------------------------- */
 const stage = document.getElementById('balloonStage');
 const stringCanvas = document.getElementById('stringCanvas');
@@ -524,7 +573,7 @@ window.addEventListener('pointermove', (e) => {
 });
 
 class BalloonInstance {
-  constructor(data) {
+  constructor(data, isInitialBatch = false) {
     this.data = data;
     this.id = data.id;
     this.theme = BALLOON_THEMES[data.themeIndex] || BALLOON_THEMES[0];
@@ -532,12 +581,19 @@ class BalloonInstance {
     const stageW = window.innerWidth;
     const stageH = window.innerHeight;
 
-    this.x = Math.random() * (stageW - 280) + 140;
-    this.y = stageH + 240;
-    this.vx = (Math.random() - 0.5) * 1.5;
-    this.vy = -3.8;
+    this.x = Math.random() * (stageW - 320) + 160;
 
-    this.targetHoverY = 110 + Math.random() * (stageH * 0.3);
+    // Instant entrance: Newly launched balloons start just off the bottom edge with a high-speed launch burst
+    if (isInitialBatch) {
+      this.y = 110 + Math.random() * (stageH * 0.35);
+      this.vy = 0;
+    } else {
+      this.y = stageH + 40; // Starts right at screen bottom, not 240px away
+      this.vy = -14.5;      // High speed rocket ascent burst (<0.8s to screen center)
+    }
+
+    this.vx = (Math.random() - 0.5) * 1.5;
+    this.targetHoverY = 110 + Math.random() * (stageH * 0.32);
     this.hoverPhase = Math.random() * Math.PI * 2;
     this.hoverSpeed = 0.02 + Math.random() * 0.015;
 
@@ -554,9 +610,9 @@ class BalloonInstance {
     for (let i = 0; i < 9; i++) {
       this.nodes.push({
         x: this.x,
-        y: this.y + 104 + i * this.segmentLength,
+        y: this.y + 115 + i * this.segmentLength,
         oldX: this.x,
-        oldY: this.y + 104 + i * this.segmentLength
+        oldY: this.y + 115 + i * this.segmentLength
       });
     }
 
@@ -564,13 +620,14 @@ class BalloonInstance {
     this.el.className = 'balloon-wrapper';
     this.el.id = this.id;
 
+    // Bold, Clear, High-Visibility Balloon Face
     this.el.innerHTML = `
       <div class="balloon-bulb" style="background: ${this.theme.bodyGrad}; box-shadow: 0 24px 38px -10px ${this.theme.ambientShadow}, 0 0 16px ${this.theme.rimLight} inset;">
-        <p class="font-black text-white text-xs sm:text-sm tracking-tight text-center truncate w-full drop-shadow-md">${data.name}</p>
+        <p class="font-black text-white text-sm sm:text-base tracking-tight text-center truncate w-full drop-shadow-md px-1">${data.name}</p>
         <div class="balloon-signature-box">
           <img src="${data.displayWhitePNG}" class="balloon-signature-img" alt="signature">
         </div>
-        <span class="text-[9px] text-white/90 font-bold tracking-wider">${data.timestamp}</span>
+        <span class="text-[9px] sm:text-[10px] text-white/90 font-bold tracking-wider">${data.timestamp}</span>
       </div>
       <div class="balloon-knot-container">
         <div class="balloon-knot" style="background: ${this.theme.knotColor};"></div>
@@ -628,18 +685,17 @@ class BalloonInstance {
 
   updatePhysics(wind) {
     if (!this.isDragging) {
-      if (this.y > this.targetHoverY + 40) {
-        const buoyancy = -0.16;
-        const dragCoeff = 0.0075;
-        const dragY = dragCoeff * (this.vy * Math.abs(this.vy));
-        this.vy += buoyancy - dragY;
-        if (this.vy < -4.0) this.vy = -4.0;
+      // Rapid ascent zone: Smooth friction braking as it nears target altitude
+      if (this.y > this.targetHoverY + 30) {
+        this.vy *= 0.94; // Brake gradually
+        if (this.vy > -2.8) this.vy = -2.8; // Maintain fast baseline ascent
       } else {
+        // Natural Floating Equilibrium Zone
         this.hoverPhase += this.hoverSpeed;
         const equilibriumTarget = this.targetHoverY + Math.sin(this.hoverPhase) * 12;
         const dy = equilibriumTarget - this.y;
-        this.vy += dy * 0.02;
-        this.vy *= 0.88;
+        this.vy += dy * 0.025;
+        this.vy *= 0.88; // Damping
       }
 
       if (userGust.force > 0.1) {
@@ -679,7 +735,7 @@ class BalloonInstance {
     }
 
     const knotAnchorX = this.x;
-    const knotAnchorY = this.y + 104;
+    const knotAnchorY = this.y + 115;
     this.nodes[0].x = knotAnchorX;
     this.nodes[0].y = knotAnchorY;
 
@@ -756,7 +812,7 @@ class BalloonInstance {
   }
 }
 
-// 60 FPS Loop
+// 60 FPS Physics Engine Loop
 let windStep = 0;
 function physicsLoop() {
   windStep += 0.015;
@@ -773,9 +829,9 @@ function physicsLoop() {
   requestAnimationFrame(physicsLoop);
 }
 
-function addBalloon(entry) {
+function addBalloon(entry, isInitialBatch = false) {
   if (balloons.some(b => b.id === entry.id)) return;
-  const b = new BalloonInstance(entry);
+  const b = new BalloonInstance(entry, isInitialBatch);
   balloons.push(b);
   const wallCount = document.getElementById('wallActiveCount');
   if (wallCount) wallCount.innerText = balloons.length;
@@ -931,14 +987,14 @@ function handleSyncPayload(payload) {
   if (!payload) return;
   if (payload.action === 'NEW_BALLOON') {
     recordInLedger(payload.data);
-    addBalloon(payload.data);
+    addBalloon(payload.data, false);
   } else if (payload.action === 'POP') {
     popBalloonById(payload.id, false);
   }
 }
 
 /* ----------------------------------------------------
-   10. AUTO-LAUNCH EXECUTION
+   10. INSTANT AUTO-LAUNCH EXECUTION
    ---------------------------------------------------- */
 function executeBalloonLaunch() {
   clearAutoLaunchCountdown();
@@ -965,19 +1021,21 @@ function executeBalloonLaunch() {
     date: now.toLocaleDateString()
   };
 
+  // 1. Immediately spawn locally and broadcast so it ascends without delay
   recordInLedger(entryData);
-  addBalloon(entryData);
+  addBalloon(entryData, false);
   broadcastMessage({ action: 'NEW_BALLOON', data: entryData });
 
+  // 2. Play subtle confetti
   confetti({
     particleCount: 35,
     spread: 55,
     origin: { y: 0.85 }
   });
 
+  // 3. Display kiosk feedback
   const notice = document.getElementById('kioskSuccessNotice');
   const counterSpan = document.getElementById('resetSeconds');
-
   notice.classList.remove('hidden');
 
   let remaining = 2;
@@ -1169,8 +1227,9 @@ window.addEventListener('load', () => {
   refreshStatsCounters();
   updateAutoSky();
 
+  // Initial historic balloons loaded in place
   const history = getLedger();
-  history.slice(-14).forEach(entry => addBalloon(entry));
+  history.slice(-14).forEach(entry => addBalloon(entry, true));
 
   requestAnimationFrame(physicsLoop);
 
