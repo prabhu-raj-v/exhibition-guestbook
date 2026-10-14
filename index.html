@@ -30,10 +30,15 @@
 
   <!-- ================= MODERN FLOATING ISLAND HEADER ================= -->
   <header class="fixed top-2 sm:top-3 inset-x-3 sm:inset-x-6 h-14 sm:h-16 header-glass rounded-2xl sm:rounded-full px-4 sm:px-6 flex items-center justify-between z-40 transition-all">
-    <div class="flex items-center min-w-0 pr-2">
+    <div class="flex items-center min-w-0 pr-2 space-x-2">
       <h1 class="header-title font-black text-sm sm:text-base tracking-tight truncate">
         Exhibition Sky Guestbook
       </h1>
+      <!-- Live Sync Diagnostic Indicator -->
+      <div class="flex items-center space-x-1.5 px-2 py-0.5 rounded-full bg-slate-500/10 border border-slate-500/20 text-[10px] font-bold">
+        <span id="syncStatusDot" class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+        <span id="syncStatusText" class="header-title opacity-80 hidden md:inline">Connecting...</span>
+      </div>
     </div>
 
     <!-- Segmented Screen Toggle Bar -->
