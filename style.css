@@ -1,0 +1,432 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=Caveat:wght@600;700&display=swap');
+
+* {
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  touch-action: manipulation;
+  overflow: hidden;
+  transition: background 2s ease-in-out, color 0.6s ease;
+}
+
+.font-signature {
+  font-family: 'Caveat', cursive;
+}
+
+/* ================= 4 REAL-TIME ATMOSPHERIC PHASES ================= */
+.sky-theme-dawn {
+  background: linear-gradient(180deg, #312e81 0%, #7c3aed 30%, #f472b6 65%, #fed7aa 100%);
+  color: #0f172a;
+}
+
+.sky-theme-day {
+  background: linear-gradient(180deg, #1e40af 0%, #2563eb 28%, #38bdf8 68%, #bae6fd 100%);
+  color: #0f172a;
+}
+
+.sky-theme-sunset {
+  background: linear-gradient(180deg, #4c1d95 0%, #be185d 35%, #f97316 70%, #fde047 100%);
+  color: #0f172a;
+}
+
+.sky-theme-night {
+  background: linear-gradient(180deg, #030712 0%, #0b0f19 45%, #111827 80%, #1e1b4b 100%);
+  color: #f8fafc;
+}
+
+/* Starry particles for night mode */
+.stars-container {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    radial-gradient(1.2px 1.2px at 25px 35px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(1.5px 1.5px at 160px 180px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 280px 80px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(2px 2px at 420px 240px, #ffffff, rgba(0,0,0,0));
+  background-repeat: repeat;
+  background-size: 600px 300px;
+  z-index: 1;
+}
+
+/* Atmospheric Horizon Glow */
+.sky-horizon-glow {
+  position: absolute;
+  bottom: 0;
+  inset-x: 0;
+  height: 160px;
+  background: linear-gradient(0deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0) 100%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+body.sky-theme-night .sky-horizon-glow {
+  background: linear-gradient(0deg, rgba(30, 27, 75, 0.5) 0%, rgba(0, 0, 0, 0) 100%);
+}
+
+/* ================= HEADER THEMING ================= */
+.header-glass {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.6) inset;
+}
+
+.header-title {
+  color: #0f172a;
+}
+
+.nav-container {
+  background: rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.nav-pill {
+  color: #334155;
+}
+
+.active-pill {
+  background: #0284c7 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+}
+
+/* ================= NIGHT MODE HEADER OVERRIDES ================= */
+body.sky-theme-night .header-glass {
+  background: rgba(15, 23, 42, 0.9) !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.8) !important;
+}
+
+body.sky-theme-night .header-title {
+  color: #ffffff !important;
+}
+
+body.sky-theme-night .nav-container {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+body.sky-theme-night .nav-pill:not(.active-pill) {
+  color: #cbd5e1 !important;
+}
+
+body.sky-theme-night .nav-pill:not(.active-pill):hover {
+  color: #ffffff !important;
+}
+
+/* ================= GLASS UI & HUD THEMING ================= */
+.glass-card {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 20px 45px -10px rgba(14, 116, 144, 0.22), 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+}
+
+.theme-label {
+  color: #1e293b;
+}
+
+.stroke-container {
+  background: rgba(226, 232, 240, 0.85);
+}
+
+.theme-btn-dim {
+  color: #475569;
+}
+
+.glass-input {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1.5px solid rgba(203, 213, 225, 0.85);
+  color: #0f172a;
+}
+
+.glass-input:focus {
+  background: #ffffff;
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.35);
+}
+
+.hud-sub {
+  color: #64748b;
+}
+
+.hud-time {
+  color: #1e293b;
+}
+
+.hud-divider {
+  background: #cbd5e1;
+}
+
+.cycle-btn {
+  color: #475569;
+}
+
+.cycle-btn:hover {
+  color: #0f172a;
+}
+
+.control-btn {
+  color: #1e293b;
+}
+
+.control-btn svg {
+  color: #1e293b;
+}
+
+.modal-close {
+  color: #64748b;
+}
+
+.modal-close:hover {
+  color: #0f172a;
+}
+
+.spotlight-title {
+  color: #0f172a;
+}
+
+.spotlight-date {
+  color: #64748b;
+}
+
+.modal-sub {
+  color: #475569;
+}
+
+.modal-dismiss-btn {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.modal-dismiss-btn:hover {
+  background: #cbd5e1;
+}
+
+/* ================= COMPREHENSIVE NIGHT MODE OVERRIDES ================= */
+body.sky-theme-night .glass-card {
+  background: rgba(15, 23, 42, 0.92) !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.85) !important;
+  color: #f8fafc !important;
+}
+
+body.sky-theme-night .theme-label {
+  color: #f1f5f9 !important;
+}
+
+body.sky-theme-night .stroke-container {
+  background: rgba(30, 41, 59, 0.9) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+body.sky-theme-night .theme-btn-dim {
+  color: #cbd5e1 !important;
+}
+
+body.sky-theme-night .theme-btn-dim:hover {
+  color: #ffffff !important;
+}
+
+body.sky-theme-night .glass-input {
+  background: rgba(30, 41, 59, 0.9) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+}
+
+body.sky-theme-night .hud-sub {
+  color: #94a3b8 !important;
+}
+
+body.sky-theme-night #wallActiveCount {
+  color: #38bdf8 !important;
+}
+
+body.sky-theme-night #wallTotalCount {
+  color: #a5b4fc !important;
+}
+
+body.sky-theme-night .hud-time {
+  color: #f8fafc !important;
+}
+
+body.sky-theme-night .hud-divider {
+  background: rgba(255, 255, 255, 0.25) !important;
+}
+
+/* Screen B Right Icons & Cycle Switchers */
+body.sky-theme-night .cycle-btn {
+  color: #94a3b8 !important;
+}
+
+body.sky-theme-night .cycle-btn:hover {
+  color: #ffffff !important;
+}
+
+body.sky-theme-night .cycle-btn svg {
+  color: #94a3b8 !important;
+}
+
+body.sky-theme-night .cycle-btn:hover svg {
+  color: #ffffff !important;
+}
+
+body.sky-theme-night .control-btn {
+  color: #f8fafc !important;
+}
+
+body.sky-theme-night .control-btn svg {
+  color: #f8fafc !important;
+}
+
+body.sky-theme-night .control-btn:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+body.sky-theme-night .modal-close {
+  color: #94a3b8 !important;
+}
+
+body.sky-theme-night .modal-close:hover {
+  color: #ffffff !important;
+}
+
+body.sky-theme-night .spotlight-title {
+  color: #ffffff !important;
+}
+
+body.sky-theme-night .spotlight-date {
+  color: #94a3b8 !important;
+}
+
+body.sky-theme-night .modal-sub {
+  color: #cbd5e1 !important;
+}
+
+body.sky-theme-night .modal-dismiss-btn {
+  background: #334155 !important;
+  color: #f8fafc !important;
+}
+
+body.sky-theme-night .modal-dismiss-btn:hover {
+  background: #475569 !important;
+}
+
+/* ================= 3D BALLOON STRUCTURE ================= */
+.balloon-wrapper {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  will-change: transform, left, top;
+  cursor: grab;
+  z-index: 20;
+  touch-action: none;
+}
+
+.balloon-wrapper:active {
+  cursor: grabbing;
+}
+
+.balloon-bulb {
+  position: relative;
+  width: 140px;
+  height: 182px;
+  border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+  transform-origin: 50% 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 12px 14px 12px;
+  box-shadow: 0 24px 38px -10px rgba(15, 23, 42, 0.35),
+              0 10px 18px -8px rgba(0, 0, 0, 0.2);
+  transition: filter 0.2s ease;
+}
+
+.balloon-bulb:hover {
+  filter: brightness(1.08) drop-shadow(0 0 12px rgba(255, 255, 255, 0.6));
+}
+
+.balloon-bulb::before {
+  content: '';
+  position: absolute;
+  top: 14px;
+  left: 18px;
+  width: 38px;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.45) 45%, rgba(255, 255, 255, 0) 75%);
+  transform: rotate(-32deg);
+  pointer-events: none;
+}
+
+.balloon-bulb::after {
+  content: '';
+  position: absolute;
+  top: 36px;
+  left: 15px;
+  width: 12px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.7);
+  pointer-events: none;
+}
+
+.balloon-knot-container {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: -3px;
+}
+
+.balloon-knot {
+  width: 14px;
+  height: 9px;
+  border-radius: 2px 2px 6px 6px;
+  box-shadow: inset 0 -2px 3px rgba(0, 0, 0, 0.35), 0 2px 4px rgba(0, 0, 0, 0.25);
+}
+
+.balloon-knot-skirt {
+  width: 18px;
+  height: 5px;
+  margin-top: -1px;
+  border-radius: 50% 50% 40% 40%;
+  opacity: 0.95;
+}
+
+.balloon-signature-box {
+  width: 100%;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: auto 0;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.32));
+}
+
+.balloon-signature-img {
+  max-width: 95%;
+  max-height: 95%;
+  object-fit: contain;
+  transform: perspective(200px) rotateX(4deg);
+  opacity: 0.96;
+}
+
+.balloon-bursting {
+  animation: burstAnim 0.16s forwards cubic-bezier(0.1, 0.9, 0.2, 1);
+  pointer-events: none;
+}
+
+@keyframes burstAnim {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  40% { transform: translate(-50%, -50%) scale(1.35); opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scale(1.9); opacity: 0; }
+}
